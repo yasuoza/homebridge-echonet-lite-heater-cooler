@@ -1,0 +1,18 @@
+{
+  "pluginAlias": "EchonetLiteHeaterCooler",
+  "pluginType": "platform",
+  "singular": true,
+  "schema": {
+    "name": {
+      "type": "string",
+      "required": true,
+      "default": "HeaterCooler"
+    },
+    "refreshInterval": {
+      "title": "Status refresh interval minutes",
+      "type": "number",
+      "default": 15,
+      "required": true
+    }
+  }
+}

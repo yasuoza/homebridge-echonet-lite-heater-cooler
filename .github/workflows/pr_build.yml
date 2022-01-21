@@ -1,0 +1,40 @@
+name: PR Build and Lint
+
+on:
+  pull_request_target:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        # the Node.js versions to build on
+        node-version: [12.x, 14.x, 16.x]
+
+    steps:
+      - uses: actions/checkout@v2.4.0
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v2.5.1
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Prettier the project
+        run: |
+          npm run lint:prettier
+
+      - name: ESLint the project
+        run: |
+          npm run lint:eslint
+
+      - name: Build the project
+        run: npm run build
+        env:
+          CI: true
