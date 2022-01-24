@@ -434,7 +434,7 @@ export class EchonetLiteHeaterCoolerAccessory {
 
       switch (p.epc) {
         case 0x80: // status
-          this.platform.log.debug(
+          this.platform.log.info(
             `${this.accessory.displayName} - Received Active: ${p.edt.status}`,
           );
 
@@ -449,7 +449,7 @@ export class EchonetLiteHeaterCoolerAccessory {
           break;
 
         case 0xb0: // mode
-          this.platform.log.debug(
+          this.platform.log.info(
             `${this.accessory.displayName} - Received mode: ${p.edt.mode}`,
           );
 
@@ -483,7 +483,7 @@ export class EchonetLiteHeaterCoolerAccessory {
           break;
 
         case 0xb3: // target temperature
-          this.platform.log.debug(
+          this.platform.log.info(
             `${this.accessory.displayName} - Received TargetTemperature: ${p.edt.temperature}`,
           );
 
@@ -511,7 +511,7 @@ export class EchonetLiteHeaterCoolerAccessory {
           break;
 
         case 0xbb: // current temperature
-          this.platform.log.debug(
+          this.platform.log.info(
             `${this.accessory.displayName} - Received CurrentTemperature: ${p.edt.temperature}`,
           );
 
@@ -522,7 +522,7 @@ export class EchonetLiteHeaterCoolerAccessory {
           break;
 
         case 0xa3: // swing
-          this.platform.log.debug(
+          this.platform.log.info(
             `${this.accessory.displayName} - Received SwingMode: ${p.edt.mode}`,
           );
 
