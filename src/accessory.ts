@@ -552,23 +552,48 @@ export class EchonetLiteHeaterCoolerAccessory {
     eoj: number[],
     epc: number,
     value: any, // eslint-disable-line @typescript-eslint/no-explicit-any
+    maxRetry = 10,
   ) {
-    try {
-      this.updateInProgress = true;
+    const setPropertyValueFunc = async (
+      address: string,
+      eoj: number[],
+      epc: number,
+      value: any, // eslint-disable-line @typescript-eslint/no-explicit-any
+      retries: number,
+    ) => {
+      try {
+        this.updateInProgress = true;
 
-      await promisify(this.platform.el.setPropertyValue).bind(this.platform.el)(
-        address,
-        eoj,
-        epc,
-        value,
-      );
-    } catch (err) {
-      this.platform.log.error(
-        `${this.accessory.displayName} - Failed set value: ${value}`,
-      );
-      this.platform.log.debug(`${err}`);
-    } finally {
-      this.updateInProgress = false;
-    }
+        await promisify(this.platform.el.setPropertyValue).bind(
+          this.platform.el,
+        )(address, eoj, epc, value);
+      } catch (err) {
+        if (retries === 1) {
+          this.platform.log.error(
+            `${
+              this.accessory.displayName
+            } - Failed to set value: ${JSON.stringify(value)}`,
+          );
+          this.platform.log.debug(`${err}`);
+          return;
+        }
+        this.platform.log.debug(
+          `${
+            this.accessory.displayName
+          } - Failed to set value: ${JSON.stringify(value)}. Retrying...`,
+        );
+        this.platform.log.debug(`${err}`);
+
+        // sleep 1 ~ maxRetry second
+        const sleep = (maxRetry - retries + 1) * 1000;
+        await new Promise((_) => setTimeout(_, sleep));
+
+        await setPropertyValueFunc(address, eoj, epc, value, retries - 1);
+      } finally {
+        this.updateInProgress = false;
+      }
+    };
+
+    return await setPropertyValueFunc(address, eoj, epc, value, maxRetry);
   }
 }
