@@ -14,4 +14,5 @@ export const PLUGIN_NAME = "homebridge-echonet-lite-heater-cooler";
 export interface EchonetLiteHeaterCoolerConfig extends PlatformConfig {
   ip: string;
   refreshInterval: number;
+  requestTimeout: number;
 }

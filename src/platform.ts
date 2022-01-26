@@ -24,7 +24,7 @@ export class EchonetLiteHeaterCoolerPlatform implements DynamicPlatformPlugin {
   public readonly Characteristic: typeof Characteristic =
     this.api.hap.Characteristic;
 
-  public readonly el = new EchonetLite({ type: "lan", timeout: 5000 });
+  public readonly el: EchonetLite;
 
   public readonly config: EchonetLiteHeaterCoolerConfig;
   public readonly accessories: Array<PlatformAccessory> = [];
@@ -37,18 +37,23 @@ export class EchonetLiteHeaterCoolerPlatform implements DynamicPlatformPlugin {
     this.log.debug("Finished initializing platform:", config.name);
 
     if (!this.verifyConfig(config)) {
-      this.log.debug("Invalid configuration. Please check your configuration.");
+      this.log.error("Invalid configuration. Please check your configuration.");
 
       // Dummy data to pass Strict Property Initialization
       this.config = {
         ...config,
         ip: "0.0.0.0",
         refreshInterval: Number.POSITIVE_INFINITY,
+        requestTimeout: Number.POSITIVE_INFINITY,
       };
+      this.el = new EchonetLite({});
       return;
     }
 
     this.config = config;
+
+    const timeout = (config.requestTimeout ?? 60) * 1000;
+    this.el = new EchonetLite({ type: "lan", timeout: timeout });
 
     this.api.on(APIEvent.DID_FINISH_LAUNCHING, () => {
       this.log.debug("Executed didFinishLaunching callback");
@@ -81,6 +86,12 @@ export class EchonetLiteHeaterCoolerPlatform implements DynamicPlatformPlugin {
     config: PlatformConfig | EchonetLiteHeaterCoolerConfig,
   ): config is EchonetLiteHeaterCoolerConfig {
     if (config.refreshInterval < 1) {
+      return false;
+    }
+    if (
+      config.requestTimeout != null &&
+      Number.isNaN(parseInt(config.requestTimeout))
+    ) {
       return false;
     }
     return true;
