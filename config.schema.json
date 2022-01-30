@@ -1,0 +1,44 @@
+{
+  "pluginAlias": "EchonetLiteHeaterCooler",
+  "pluginType": "platform",
+  "singular": true,
+  "schema": {
+    "name": {
+      "type": "string",
+      "required": true,
+      "default": "HeaterCooler"
+    },
+    "refreshInterval": {
+      "title": "Status refresh interval minutes",
+      "type": "number",
+      "default": 15,
+      "required": true
+    },
+    "requestTimeout": {
+      "title": "EchonetLite request timeout second",
+      "type": "number",
+      "default": 60,
+      "placeholder": 60,
+      "required": false
+    }
+  },
+  "layout": [
+    {
+      "type": "fieldset",
+      "title": "Basic settings",
+      "items": [
+        "name",
+        "refreshInterval"
+      ]
+    },
+    {
+      "type": "fieldset",
+      "title": "Advanced settings",
+      "expandable": true,
+      "expanded": false,
+      "items": [
+        "requestTimeout"
+      ]
+    }
+  ]
+}
