@@ -6,7 +6,7 @@
 
 # homebridge-echonet-lite-heater-cooler
 
-[![GitHub Release](https://flat.badgen.net/github/release/yasuoza/homebridge-echonet-lite-heater-cooler/master?icon=github)](https://github.com/yasuoza/homebridge-echonet-lite-heater-cooler/releases)
+[![GitHub Release](https://flat.badgen.net/github/release/yasuoza/homebridge-echonet-lite-heater-cooler/main?icon=github)](https://github.com/yasuoza/homebridge-echonet-lite-heater-cooler/releases)
 
 Homebridge plugin for ECHONET lite air conditioner.
 
