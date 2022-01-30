@@ -20,7 +20,7 @@ Homebridge plugin for ECHONET lite air conditioner.
 ## Install
 
 ```
-npm install -g yasuoza/homebridge-echonet-lite-heater-cooler
+npm install -g 'yasuoza/homebridge-echonet-lite-heater-cooler#npm'
 ```
 
 ## Configuration
