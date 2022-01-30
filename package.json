@@ -1,7 +1,7 @@
 {
   "displayName": "Homebridge ECHONET Lite Heater Cooler",
   "name": "homebridge-echonet-lite-heater-cooler",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Homebridge plugin for echonet supported aircon",
   "license": "MIT",
   "repository": {
