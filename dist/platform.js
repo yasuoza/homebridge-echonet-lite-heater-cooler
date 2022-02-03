@@ -108,7 +108,7 @@ class EchonetLiteHeaterCoolerPlatform {
     addAccessory(opts) {
         const existingAccessory = this.accessories.find((accessory) => accessory.UUID === opts.uuid);
         if (existingAccessory) {
-            this.log.info("Restoring existing accessory from cache:", existingAccessory.displayName);
+            this.log.info(`Restoring existing accessory from cache: ${existingAccessory.displayName}(${opts.address})`);
             new accessory_1.EchonetLiteHeaterCoolerAccessory(this, existingAccessory);
         }
         else {
