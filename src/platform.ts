@@ -180,8 +180,7 @@ export class EchonetLiteHeaterCoolerPlatform implements DynamicPlatformPlugin {
 
     if (existingAccessory) {
       this.log.info(
-        "Restoring existing accessory from cache:",
-        existingAccessory.displayName,
+        `Restoring existing accessory from cache: ${existingAccessory.displayName}(${opts.address})`,
       );
       new EchonetLiteHeaterCoolerAccessory(this, existingAccessory);
     } else {
