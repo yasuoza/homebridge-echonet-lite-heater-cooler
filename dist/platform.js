@@ -23,7 +23,7 @@ class EchonetLiteHeaterCoolerPlatform {
             // Dummy data to pass Strict Property Initialization
             this.config = {
                 ...config,
-                ip: "0.0.0.0",
+                devices: [],
                 refreshInterval: Number.POSITIVE_INFINITY,
                 requestTimeout: Number.POSITIVE_INFINITY,
             };
@@ -37,10 +37,17 @@ class EchonetLiteHeaterCoolerPlatform {
             this.log.debug("Executed didFinishLaunching callback");
             this.el.init((err) => {
                 if (err) {
-                    log.error(`${err.name}: ${err.message}`);
+                    this.log.error("Failed to initialize echonet-lite");
+                    this.log.debug(`${err}`);
                 }
                 else {
-                    this.discoverDevices();
+                    try {
+                        this.discoverDevices();
+                    }
+                    catch (e) {
+                        this.log.error("Failed to initialize echonet-lite");
+                        this.log.debug(`${e}`);
+                    }
                 }
             });
         });
@@ -67,43 +74,53 @@ class EchonetLiteHeaterCoolerPlatform {
         return true;
     }
     async discoverDevices() {
-        this.el.startDiscovery(async (err, res) => {
-            var _a, _b;
+        for (const device of this.config.devices) {
+            await this.addDeviceToAccessory(device.host);
+        }
+        this.el.startDiscovery((err, res) => {
             if (err) {
-                this.log.error(`${err.name}: ${err.message}`);
+                this.log.error(`Failed to discovering echonet devices(${err.name}: ${err.message})`);
                 this.el.stopDiscovery();
                 return;
             }
             const device = res["device"];
             const address = device["address"];
+            if (this.config.devices.some((val) => val.host === address)) {
+                return;
+            }
             for (const eoj of device["eoj"]) {
-                try {
-                    const group_code = eoj[0];
-                    const class_code = eoj[1];
-                    this.log.debug(`Device found: ${JSON.stringify({
-                        group_code: "0x" + Number(group_code).toString(16),
-                        class_code: "0x" + Number(class_code).toString(16),
-                        address: address,
-                    })}`);
-                    if (group_code === 0x01 && class_code === 0x30) {
-                        const serial = (await (0, util_1.promisify)(this.el.getPropertyValue).bind(this.el)(address, eoj, 0x8d)).message.data.number;
-                        const uuid = serial
-                            ? this.api.hap.uuid.generate(serial)
-                            : this.api.hap.uuid.generate(address);
-                        const name = (_a = (await (0, util_1.promisify)(this.el.getPropertyValue).bind(this.el)(address, eoj, 0x8c)).message.data.code) !== null && _a !== void 0 ? _a : address;
-                        const makerCode = (await (0, util_1.promisify)(this.el.getPropertyValue).bind(this.el)(address, eoj, 0x8a)).message.data.code;
-                        const maker = (_b = makerCode_1.MakerList[makerCode.toString(16).padStart(6, "0").toUpperCase()]) !== null && _b !== void 0 ? _b : "Manufacturer";
-                        this.addAccessory({ serial, uuid, name, address, maker, eoj });
-                    }
-                }
-                catch (err) {
-                    this.log.error(err);
+                const group_code = eoj[0];
+                const class_code = eoj[1];
+                this.log.debug(`Device found: ${JSON.stringify({
+                    group_code: "0x" + Number(group_code).toString(16),
+                    class_code: "0x" + Number(class_code).toString(16),
+                    address: address,
+                })}`);
+                if (group_code === 0x01 && class_code === 0x30) {
+                    this.addDeviceToAccessory(address, eoj);
                 }
             }
         });
         setTimeout(() => {
             this.el.stopDiscovery();
         }, 60 * 1000);
+    }
+    async addDeviceToAccessory(address, eoj = [1, 48, 0]) {
+        var _a, _b;
+        try {
+            const serial = (await (0, util_1.promisify)(this.el.getPropertyValue).bind(this.el)(address, eoj, 0x8d)).message.data.number;
+            const uuid = serial
+                ? this.api.hap.uuid.generate(serial)
+                : this.api.hap.uuid.generate(address);
+            const name = (_a = (await (0, util_1.promisify)(this.el.getPropertyValue).bind(this.el)(address, eoj, 0x8c)).message.data.code) !== null && _a !== void 0 ? _a : address;
+            const makerCode = (await (0, util_1.promisify)(this.el.getPropertyValue).bind(this.el)(address, eoj, 0x8a)).message.data.code;
+            const maker = (_b = makerCode_1.MakerList[makerCode.toString(16).padStart(6, "0").toUpperCase()]) !== null && _b !== void 0 ? _b : "Manufacturer";
+            this.addAccessory({ serial, uuid, name, address, maker, eoj });
+        }
+        catch (err) {
+            this.log.error(`Failed to addDeviceToAccessory - address: ${address}`);
+            this.log.debug(`${err}`);
+        }
     }
     addAccessory(opts) {
         const existingAccessory = this.accessories.find((accessory) => accessory.UUID === opts.uuid);

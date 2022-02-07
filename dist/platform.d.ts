@@ -17,6 +17,7 @@ export declare class EchonetLiteHeaterCoolerPlatform implements DynamicPlatformP
     configureAccessory(accessory: PlatformAccessory): void;
     private verifyConfig;
     private discoverDevices;
+    private addDeviceToAccessory;
     private addAccessory;
 }
 //# sourceMappingURL=platform.d.ts.map

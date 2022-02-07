@@ -20,6 +20,20 @@
       "default": 60,
       "placeholder": 60,
       "required": false
+    },
+    "devices": {
+      "title": "Devices",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "host": {
+            "title": "Host",
+            "type": "string",
+            "required": true
+          }
+        }
+      }
     }
   },
   "layout": [
@@ -29,6 +43,17 @@
       "items": [
         "name",
         "refreshInterval"
+      ]
+    },
+    {
+      "type": "fieldset",
+      "title": "Manual Discovery",
+      "expandable": true,
+      "expanded": false,
+      "buttonText": "Add Device",
+      "key": "devices",
+      "items": [
+        "devices[].host"
       ]
     },
     {
