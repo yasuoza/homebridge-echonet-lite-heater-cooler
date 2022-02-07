@@ -42,7 +42,7 @@ export class EchonetLiteHeaterCoolerPlatform implements DynamicPlatformPlugin {
       // Dummy data to pass Strict Property Initialization
       this.config = {
         ...config,
-        ip: "0.0.0.0",
+        devices: [],
         refreshInterval: Number.POSITIVE_INFINITY,
         requestTimeout: Number.POSITIVE_INFINITY,
       };
@@ -60,9 +60,15 @@ export class EchonetLiteHeaterCoolerPlatform implements DynamicPlatformPlugin {
 
       this.el.init((err) => {
         if (err) {
-          log.error(`${err.name}: ${err.message}`);
+          this.log.error("Failed to initialize echonet-lite");
+          this.log.debug(`${err}`);
         } else {
-          this.discoverDevices();
+          try {
+            this.discoverDevices();
+          } catch (e) {
+            this.log.error("Failed to initialize echonet-lite");
+            this.log.debug(`${e}`);
+          }
         }
       });
     });
@@ -98,65 +104,40 @@ export class EchonetLiteHeaterCoolerPlatform implements DynamicPlatformPlugin {
   }
 
   private async discoverDevices() {
-    this.el.startDiscovery(async (err, res) => {
+    for (const device of this.config.devices) {
+      await this.addDeviceToAccessory(device.host);
+    }
+
+    this.el.startDiscovery((err, res) => {
       if (err) {
-        this.log.error(`${err.name}: ${err.message}`);
+        this.log.error(
+          `Failed to discovering echonet devices(${err.name}: ${err.message})`,
+        );
         this.el.stopDiscovery();
         return;
       }
 
       const device = res["device"];
       const address = device["address"];
+
+      if (this.config.devices.some((val) => val.host === address)) {
+        return;
+      }
+
       for (const eoj of device["eoj"]) {
-        try {
-          const group_code = eoj[0];
-          const class_code = eoj[1];
+        const group_code = eoj[0];
+        const class_code = eoj[1];
 
-          this.log.debug(
-            `Device found: ${JSON.stringify({
-              group_code: "0x" + Number(group_code).toString(16),
-              class_code: "0x" + Number(class_code).toString(16),
-              address: address,
-            })}`,
-          );
+        this.log.debug(
+          `Device found: ${JSON.stringify({
+            group_code: "0x" + Number(group_code).toString(16),
+            class_code: "0x" + Number(class_code).toString(16),
+            address: address,
+          })}`,
+        );
 
-          if (group_code === 0x01 && class_code === 0x30) {
-            const serial = (
-              await promisify(this.el.getPropertyValue).bind(this.el)(
-                address,
-                eoj,
-                0x8d,
-              )
-            ).message.data.number;
-            const uuid = serial
-              ? this.api.hap.uuid.generate(serial)
-              : this.api.hap.uuid.generate(address);
-
-            const name =
-              (
-                await promisify(this.el.getPropertyValue).bind(this.el)(
-                  address,
-                  eoj,
-                  0x8c,
-                )
-              ).message.data.code ?? address;
-
-            const makerCode = (
-              await promisify(this.el.getPropertyValue).bind(this.el)(
-                address,
-                eoj,
-                0x8a,
-              )
-            ).message.data.code;
-            const maker =
-              MakerList[
-                makerCode.toString(16).padStart(6, "0").toUpperCase()
-              ] ?? "Manufacturer";
-
-            this.addAccessory({ serial, uuid, name, address, maker, eoj });
-          }
-        } catch (err) {
-          this.log.error(err as string);
+        if (group_code === 0x01 && class_code === 0x30) {
+          this.addDeviceToAccessory(address, eoj);
         }
       }
     });
@@ -164,6 +145,49 @@ export class EchonetLiteHeaterCoolerPlatform implements DynamicPlatformPlugin {
     setTimeout(() => {
       this.el.stopDiscovery();
     }, 60 * 1000);
+  }
+
+  private async addDeviceToAccessory(
+    address: string,
+    eoj: number[] = [1, 48, 0],
+  ) {
+    try {
+      const serial = (
+        await promisify(this.el.getPropertyValue).bind(this.el)(
+          address,
+          eoj,
+          0x8d,
+        )
+      ).message.data.number;
+      const uuid = serial
+        ? this.api.hap.uuid.generate(serial)
+        : this.api.hap.uuid.generate(address);
+
+      const name =
+        (
+          await promisify(this.el.getPropertyValue).bind(this.el)(
+            address,
+            eoj,
+            0x8c,
+          )
+        ).message.data.code ?? address;
+
+      const makerCode = (
+        await promisify(this.el.getPropertyValue).bind(this.el)(
+          address,
+          eoj,
+          0x8a,
+        )
+      ).message.data.code;
+      const maker =
+        MakerList[makerCode.toString(16).padStart(6, "0").toUpperCase()] ??
+        "Manufacturer";
+
+      this.addAccessory({ serial, uuid, name, address, maker, eoj });
+    } catch (err) {
+      this.log.error(`Failed to addDeviceToAccessory - address: ${address}`);
+      this.log.debug(`${err}`);
+    }
   }
 
   private addAccessory(opts: {
