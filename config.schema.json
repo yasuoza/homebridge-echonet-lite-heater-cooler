@@ -19,8 +19,8 @@
       "requestTimeout": {
         "title": "EchonetLite request timeout second",
         "type": "number",
-        "default": 60,
-        "placeholder": 60,
+        "default": 10,
+        "placeholder": 10,
         "required": false
       },
       "devices": {

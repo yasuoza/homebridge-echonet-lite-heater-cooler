@@ -51,7 +51,7 @@ export class EchonetLiteHeaterCoolerPlatform implements DynamicPlatformPlugin {
 
     this.config = config;
 
-    const timeout = (config.requestTimeout ?? 60) * 1000;
+    const timeout = (config.requestTimeout ?? 20) * 1000;
     this.el = new EchonetLite({ type: "lan", timeout: timeout });
 
     this.api.on(APIEvent.DID_FINISH_LAUNCHING, () => {
