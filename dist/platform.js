@@ -30,7 +30,7 @@ class EchonetLiteHeaterCoolerPlatform {
             return;
         }
         this.config = config;
-        const timeout = ((_a = config.requestTimeout) !== null && _a !== void 0 ? _a : 60) * 1000;
+        const timeout = ((_a = config.requestTimeout) !== null && _a !== void 0 ? _a : 20) * 1000;
         this.el = new node_echonet_lite_1.default({ type: "lan", timeout: timeout });
         this.api.on("didFinishLaunching" /* DID_FINISH_LAUNCHING */, () => {
             this.log.debug("Executed didFinishLaunching callback");
