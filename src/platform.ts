@@ -42,7 +42,6 @@ export class EchonetLiteHeaterCoolerPlatform implements DynamicPlatformPlugin {
       // Dummy data to pass Strict Property Initialization
       this.config = {
         ...config,
-        devices: [],
         refreshInterval: Number.POSITIVE_INFINITY,
         requestTimeout: Number.POSITIVE_INFINITY,
       };
