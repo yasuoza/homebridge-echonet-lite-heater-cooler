@@ -8,9 +8,7 @@ export declare const PLATFORM_NAME = "EchonetLiteHeaterCooler";
  */
 export declare const PLUGIN_NAME = "homebridge-echonet-lite-heater-cooler";
 export interface EchonetLiteHeaterCoolerConfig extends PlatformConfig {
-    devices?: {
-        host: string;
-    }[];
+    devices?: [string];
     refreshInterval: number;
     requestTimeout: number;
 }

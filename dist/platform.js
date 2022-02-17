@@ -23,7 +23,6 @@ class EchonetLiteHeaterCoolerPlatform {
             // Dummy data to pass Strict Property Initialization
             this.config = {
                 ...config,
-                devices: [],
                 refreshInterval: Number.POSITIVE_INFINITY,
                 requestTimeout: Number.POSITIVE_INFINITY,
             };
@@ -76,8 +75,8 @@ class EchonetLiteHeaterCoolerPlatform {
     async discoverDevices() {
         var _a;
         const manualDevices = (_a = this.config.devices) !== null && _a !== void 0 ? _a : [];
-        for (const device of manualDevices) {
-            await this.addDeviceToAccessory(device.host);
+        for (const host of manualDevices) {
+            await this.addDeviceToAccessory(host);
         }
         this.el.startDiscovery((err, res) => {
             if (err) {
@@ -87,7 +86,7 @@ class EchonetLiteHeaterCoolerPlatform {
             }
             const device = res["device"];
             const address = device["address"];
-            if (manualDevices.some((val) => val.host === address)) {
+            if (manualDevices.some((manualHost) => manualHost === address)) {
                 return;
             }
             for (const eoj of device["eoj"]) {
