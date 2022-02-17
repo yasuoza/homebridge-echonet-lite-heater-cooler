@@ -106,8 +106,8 @@ export class EchonetLiteHeaterCoolerPlatform implements DynamicPlatformPlugin {
   private async discoverDevices() {
     const manualDevices = this.config.devices ?? [];
 
-    for (const device of manualDevices) {
-      await this.addDeviceToAccessory(device.host);
+    for (const host of manualDevices) {
+      await this.addDeviceToAccessory(host);
     }
 
     this.el.startDiscovery((err, res) => {
@@ -122,7 +122,7 @@ export class EchonetLiteHeaterCoolerPlatform implements DynamicPlatformPlugin {
       const device = res["device"];
       const address = device["address"];
 
-      if (manualDevices.some((val) => val.host === address)) {
+      if (manualDevices.some((manualHost) => manualHost === address)) {
         return;
       }
 

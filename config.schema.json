@@ -3,35 +3,32 @@
   "pluginType": "platform",
   "singular": true,
   "schema": {
-    "name": {
-      "type": "string",
-      "required": true,
-      "default": "HeaterCooler"
-    },
-    "refreshInterval": {
-      "title": "Status refresh interval minutes",
-      "type": "number",
-      "default": 15,
-      "required": true
-    },
-    "requestTimeout": {
-      "title": "EchonetLite request timeout second",
-      "type": "number",
-      "default": 60,
-      "placeholder": 60,
-      "required": false
-    },
-    "devices": {
-      "title": "Devices",
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "host": {
-            "title": "Host",
-            "type": "string",
-            "required": true
-          }
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string",
+        "required": true,
+        "default": "HeaterCooler"
+      },
+      "refreshInterval": {
+        "title": "Status refresh interval minutes",
+        "type": "number",
+        "default": 15,
+        "required": true
+      },
+      "requestTimeout": {
+        "title": "EchonetLite request timeout second",
+        "type": "number",
+        "default": 60,
+        "placeholder": 60,
+        "required": false
+      },
+      "devices": {
+        "title": "Devices",
+        "type": "array",
+        "items": {
+          "title": "Host",
+          "type": "string"
         }
       }
     }
@@ -48,12 +45,19 @@
     {
       "type": "fieldset",
       "title": "Manual Discovery",
+      "description": "If automatic discovery is not working, try this.",
       "expandable": true,
-      "expanded": false,
-      "buttonText": "Add Device",
-      "key": "devices",
       "items": [
-        "devices[].host"
+        {
+          "key": "devices",
+          "type": "array",
+          "buttonText": "Add Device",
+          "items": {
+            "title": "Host",
+            "type": "string",
+            "required": true
+          }
+        }
       ]
     },
     {
