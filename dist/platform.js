@@ -74,7 +74,9 @@ class EchonetLiteHeaterCoolerPlatform {
         return true;
     }
     async discoverDevices() {
-        for (const device of this.config.devices) {
+        var _a;
+        const manualDevices = (_a = this.config.devices) !== null && _a !== void 0 ? _a : [];
+        for (const device of manualDevices) {
             await this.addDeviceToAccessory(device.host);
         }
         this.el.startDiscovery((err, res) => {
@@ -85,7 +87,7 @@ class EchonetLiteHeaterCoolerPlatform {
             }
             const device = res["device"];
             const address = device["address"];
-            if (this.config.devices.some((val) => val.host === address)) {
+            if (manualDevices.some((val) => val.host === address)) {
                 return;
             }
             for (const eoj of device["eoj"]) {
