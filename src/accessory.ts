@@ -318,6 +318,17 @@ export class EchonetLiteHeaterCoolerAccessory {
       .updateValue(this.currentState);
 
     await this.setPropertyValue(this.address, this.eoj, 0xb0, { mode });
+
+    // Set temperature when targetState is HEAT or COOL
+    const temperature = this.targetTemp[this.targetState];
+    if (temperature != null) {
+      this.platform.log.info(
+        `${this.accessory.displayName} - SET TargetTemperature: ${temperature}`,
+      );
+      await this.setPropertyValue(this.address, this.eoj, 0xb3, {
+        temperature,
+      });
+    }
   }
 
   /**
@@ -483,14 +494,14 @@ export class EchonetLiteHeaterCoolerAccessory {
           break;
 
         case 0xb3: // target temperature
-          this.platform.log.info(
-            `${this.accessory.displayName} - Received TargetTemperature: ${p.edt.temperature}`,
-          );
-
           // Auto mode triggers null temperature
           if (p.edt.temperature == null) {
             break;
           }
+
+          this.platform.log.info(
+            `${this.accessory.displayName} - Received TargetTemperature: ${p.edt.temperature}`,
+          );
 
           switch (this.targetState) {
             case this.platform.Characteristic.TargetHeaterCoolerState.COOL:
