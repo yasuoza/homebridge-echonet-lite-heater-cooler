@@ -129,26 +129,7 @@ export class EchonetLiteHeaterCoolerAccessory {
     try {
       const res = await this.getPropertyValue(this.address, this.eoj, 0xb0);
       const mode = res.message.data.mode;
-      switch (mode) {
-        case 2:
-          this.targetState =
-            this.platform.Characteristic.TargetHeaterCoolerState.COOL;
-          this.currentState =
-            this.platform.Characteristic.CurrentHeaterCoolerState.COOLING;
-          break;
-        case 3:
-          this.targetState =
-            this.platform.Characteristic.TargetHeaterCoolerState.HEAT;
-          this.currentState =
-            this.platform.Characteristic.CurrentHeaterCoolerState.HEATING;
-          break;
-        default:
-          this.targetState =
-            this.platform.Characteristic.TargetHeaterCoolerState.AUTO;
-          this.currentState =
-            this.platform.Characteristic.CurrentHeaterCoolerState.IDLE;
-          break;
-      }
+      this.setTargetAndCurrentMode(mode);
     } catch (err) {
       this.platform.log.debug(
         `Failed to fetch target state: ${(err as Error).message}`,
@@ -218,14 +199,6 @@ export class EchonetLiteHeaterCoolerAccessory {
       this.handleActiveGet(),
     );
     this.service.updateCharacteristic(
-      this.platform.Characteristic.TargetHeaterCoolerState,
-      this.handleTargetHeaterCoolerStateGet(),
-    );
-    this.service.updateCharacteristic(
-      this.platform.Characteristic.CurrentHeaterCoolerState,
-      this.handleCurrentHeaterCoolerStateGet(),
-    );
-    this.service.updateCharacteristic(
       this.platform.Characteristic.CurrentTemperature,
       this.handleCurrentTemperatureGet(),
     );
@@ -289,35 +262,17 @@ export class EchonetLiteHeaterCoolerAccessory {
       `${this.accessory.displayName} - SET TargetHeaterCoolerState: ${value}`,
     );
 
-    let mode = 1; // AUTO
-    switch (value) {
-      case this.platform.Characteristic.TargetHeaterCoolerState.COOL:
-        mode = 2;
-        this.targetState =
-          this.platform.Characteristic.TargetHeaterCoolerState.COOL;
-        this.currentState =
-          this.platform.Characteristic.CurrentHeaterCoolerState.COOLING;
-        break;
-      case this.platform.Characteristic.TargetHeaterCoolerState.HEAT:
-        mode = 3;
-        this.targetState =
-          this.platform.Characteristic.TargetHeaterCoolerState.HEAT;
-        this.currentState =
-          this.platform.Characteristic.CurrentHeaterCoolerState.HEATING;
-        break;
-      default:
-        this.targetState =
-          this.platform.Characteristic.TargetHeaterCoolerState.AUTO;
-        this.currentState =
-          this.platform.Characteristic.CurrentHeaterCoolerState.IDLE;
-        break;
-    }
+    const mode =
+      {
+        [this.platform.Characteristic.TargetHeaterCoolerState.COOL]: 2,
+        [this.platform.Characteristic.TargetHeaterCoolerState.HEAT]: 3,
+      }[value as number] ?? 1;
 
-    this.service
-      .getCharacteristic(this.platform.Characteristic.CurrentHeaterCoolerState)
-      .updateValue(this.currentState);
+    this.setTargetAndCurrentMode(mode);
 
-    await this.setPropertyValue(this.address, this.eoj, 0xb0, { mode });
+    await this.setPropertyValue(this.address, this.eoj, 0xb0, {
+      mode,
+    });
 
     // Set temperature when targetState is HEAT or COOL
     const temperature = this.targetTemp[this.targetState];
@@ -463,34 +418,7 @@ export class EchonetLiteHeaterCoolerAccessory {
           this.platform.log.info(
             `${this.accessory.displayName} - Received mode: ${p.edt.mode}`,
           );
-
-          switch (p.edt.mode) {
-            case 2: // Cool
-              this.targetState =
-                this.platform.Characteristic.TargetHeaterCoolerState.COOL;
-              this.currentState =
-                this.platform.Characteristic.CurrentHeaterCoolerState.COOLING;
-              break;
-            case 3: // Heat
-              this.targetState =
-                this.platform.Characteristic.TargetHeaterCoolerState.HEAT;
-              this.currentState =
-                this.platform.Characteristic.CurrentHeaterCoolerState.HEATING;
-              break;
-            default:
-              // Auto
-              this.targetState =
-                this.platform.Characteristic.TargetHeaterCoolerState.AUTO;
-              this.currentState =
-                this.platform.Characteristic.CurrentHeaterCoolerState.IDLE;
-              break;
-          }
-
-          this.service
-            .getCharacteristic(
-              this.platform.Characteristic.CurrentHeaterCoolerState,
-            )
-            .updateValue(this.currentState);
+          this.setTargetAndCurrentMode(p.edt.mode);
           break;
 
         case 0xb3: // target temperature
@@ -546,10 +474,43 @@ export class EchonetLiteHeaterCoolerAccessory {
     }
   }
 
+  private setTargetAndCurrentMode(mode: number) {
+    switch (mode) {
+      case 2: // Cool
+        this.targetState =
+          this.platform.Characteristic.TargetHeaterCoolerState.COOL;
+        this.currentState =
+          this.platform.Characteristic.CurrentHeaterCoolerState.COOLING;
+        break;
+      case 3: // Heat
+        this.targetState =
+          this.platform.Characteristic.TargetHeaterCoolerState.HEAT;
+        this.currentState =
+          this.platform.Characteristic.CurrentHeaterCoolerState.HEATING;
+        break;
+      default:
+        // Auto
+        this.targetState =
+          this.platform.Characteristic.TargetHeaterCoolerState.AUTO;
+        this.currentState =
+          this.platform.Characteristic.CurrentHeaterCoolerState.IDLE;
+        break;
+    }
+
+    this.service.updateCharacteristic(
+      this.platform.Characteristic.TargetHeaterCoolerState,
+      this.handleTargetHeaterCoolerStateGet(),
+    );
+    this.service.updateCharacteristic(
+      this.platform.Characteristic.CurrentHeaterCoolerState,
+      this.handleCurrentHeaterCoolerStateGet(),
+    );
+  }
+
   /**
    * Promisified Echonet.getPropertyValue
    */
-  async getPropertyValue(address: string, eoj: number[], epc: number) {
+  private async getPropertyValue(address: string, eoj: number[], epc: number) {
     return await promisify(this.platform.el.getPropertyValue).bind(
       this.platform.el,
     )(address, eoj, epc);
@@ -558,7 +519,7 @@ export class EchonetLiteHeaterCoolerAccessory {
   /**
    * Promisified Echonet.setPropertyValue
    */
-  async setPropertyValue(
+  private async setPropertyValue(
     address: string,
     eoj: number[],
     epc: number,
