@@ -120,7 +120,7 @@ export class EchonetLiteHeaterCoolerAccessory {
       const power = await this.getPropertyValue(this.address, this.eoj, 0x80);
       this.isActive = power.message.data.status;
     } catch (err) {
-      this.platform.log.debug(
+      this.platform.log.error(
         `Failed to fetch power: ${(err as Error).message}`,
       );
     }
@@ -131,7 +131,7 @@ export class EchonetLiteHeaterCoolerAccessory {
       const mode = res.message.data.mode;
       this.setTargetAndCurrentMode(mode);
     } catch (err) {
-      this.platform.log.debug(
+      this.platform.log.error(
         `Failed to fetch target state: ${(err as Error).message}`,
       );
     }
@@ -141,7 +141,7 @@ export class EchonetLiteHeaterCoolerAccessory {
       const res = await this.getPropertyValue(this.address, this.eoj, 0xbb);
       this.currentTemp = res.message.data.temperature ?? -127;
     } catch (err) {
-      this.platform.log.debug(
+      this.platform.log.error(
         `Failed to fetch current temperature: ${(err as Error).message}`,
       );
     }
@@ -157,7 +157,7 @@ export class EchonetLiteHeaterCoolerAccessory {
         this.platform.Characteristic.TargetHeaterCoolerState.HEAT
       ] ??= defaultTargetTemp;
     } catch (err) {
-      this.platform.log.debug(
+      this.platform.log.error(
         `Failed to fetch target temperature: ${(err as Error).message}`,
       );
     }
@@ -169,7 +169,7 @@ export class EchonetLiteHeaterCoolerAccessory {
         res.message.data.mode ??
         this.platform.Characteristic.SwingMode.SWING_DISABLED;
     } catch (err) {
-      this.platform.log.debug(
+      this.platform.log.error(
         `Failed to fetch swing mode: ${(err as Error).message}`,
       );
     }
