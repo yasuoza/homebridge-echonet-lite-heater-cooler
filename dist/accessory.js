@@ -81,35 +81,16 @@ class EchonetLiteHeaterCoolerAccessory {
             this.isActive = power.message.data.status;
         }
         catch (err) {
-            this.platform.log.debug(`Failed to fetch power: ${err.message}`);
+            this.platform.log.error(`Failed to fetch power: ${err.message}`);
         }
         // target state
         try {
             const res = await this.getPropertyValue(this.address, this.eoj, 0xb0);
             const mode = res.message.data.mode;
-            switch (mode) {
-                case 2:
-                    this.targetState =
-                        this.platform.Characteristic.TargetHeaterCoolerState.COOL;
-                    this.currentState =
-                        this.platform.Characteristic.CurrentHeaterCoolerState.COOLING;
-                    break;
-                case 3:
-                    this.targetState =
-                        this.platform.Characteristic.TargetHeaterCoolerState.HEAT;
-                    this.currentState =
-                        this.platform.Characteristic.CurrentHeaterCoolerState.HEATING;
-                    break;
-                default:
-                    this.targetState =
-                        this.platform.Characteristic.TargetHeaterCoolerState.AUTO;
-                    this.currentState =
-                        this.platform.Characteristic.CurrentHeaterCoolerState.IDLE;
-                    break;
-            }
+            this.setTargetAndCurrentMode(mode);
         }
         catch (err) {
-            this.platform.log.debug(`Failed to fetch target state: ${err.message}`);
+            this.platform.log.error(`Failed to fetch target state: ${err.message}`);
         }
         // current temp
         try {
@@ -117,7 +98,7 @@ class EchonetLiteHeaterCoolerAccessory {
             this.currentTemp = (_a = res.message.data.temperature) !== null && _a !== void 0 ? _a : -127;
         }
         catch (err) {
-            this.platform.log.debug(`Failed to fetch current temperature: ${err.message}`);
+            this.platform.log.error(`Failed to fetch current temperature: ${err.message}`);
         }
         // target temp
         try {
@@ -127,7 +108,7 @@ class EchonetLiteHeaterCoolerAccessory {
             (_d = (_h = this.targetTemp)[_j = this.platform.Characteristic.TargetHeaterCoolerState.HEAT]) !== null && _d !== void 0 ? _d : (_h[_j] = defaultTargetTemp);
         }
         catch (err) {
-            this.platform.log.debug(`Failed to fetch target temperature: ${err.message}`);
+            this.platform.log.error(`Failed to fetch target temperature: ${err.message}`);
         }
         // swing mode
         try {
@@ -136,7 +117,7 @@ class EchonetLiteHeaterCoolerAccessory {
                 (_e = res.message.data.mode) !== null && _e !== void 0 ? _e : this.platform.Characteristic.SwingMode.SWING_DISABLED;
         }
         catch (err) {
-            this.platform.log.debug(`Failed to fetch swing mode: ${err.message}`);
+            this.platform.log.error(`Failed to fetch swing mode: ${err.message}`);
         }
         this.platform.log.debug(this.accessory.displayName +
             " - " +
@@ -150,8 +131,6 @@ class EchonetLiteHeaterCoolerAccessory {
                 SwingMode: this.swingMode,
             }));
         this.service.updateCharacteristic(this.platform.Characteristic.Active, this.handleActiveGet());
-        this.service.updateCharacteristic(this.platform.Characteristic.TargetHeaterCoolerState, this.handleTargetHeaterCoolerStateGet());
-        this.service.updateCharacteristic(this.platform.Characteristic.CurrentHeaterCoolerState, this.handleCurrentHeaterCoolerStateGet());
         this.service.updateCharacteristic(this.platform.Characteristic.CurrentTemperature, this.handleCurrentTemperatureGet());
         this.service.updateCharacteristic(this.platform.Characteristic.CoolingThresholdTemperature, this.targetTemp[this.platform.Characteristic.TargetHeaterCoolerState.COOL]);
         this.service.updateCharacteristic(this.platform.Characteristic.HeatingThresholdTemperature, this.targetTemp[this.platform.Characteristic.TargetHeaterCoolerState.HEAT]);
@@ -188,34 +167,16 @@ class EchonetLiteHeaterCoolerAccessory {
      * Handle requests to set the "Target Heater-Cooler State" characteristic
      */
     async handleTargetHeaterCoolerStateSet(value) {
+        var _a;
         this.platform.log.info(`${this.accessory.displayName} - SET TargetHeaterCoolerState: ${value}`);
-        let mode = 1; // AUTO
-        switch (value) {
-            case this.platform.Characteristic.TargetHeaterCoolerState.COOL:
-                mode = 2;
-                this.targetState =
-                    this.platform.Characteristic.TargetHeaterCoolerState.COOL;
-                this.currentState =
-                    this.platform.Characteristic.CurrentHeaterCoolerState.COOLING;
-                break;
-            case this.platform.Characteristic.TargetHeaterCoolerState.HEAT:
-                mode = 3;
-                this.targetState =
-                    this.platform.Characteristic.TargetHeaterCoolerState.HEAT;
-                this.currentState =
-                    this.platform.Characteristic.CurrentHeaterCoolerState.HEATING;
-                break;
-            default:
-                this.targetState =
-                    this.platform.Characteristic.TargetHeaterCoolerState.AUTO;
-                this.currentState =
-                    this.platform.Characteristic.CurrentHeaterCoolerState.IDLE;
-                break;
-        }
-        this.service
-            .getCharacteristic(this.platform.Characteristic.CurrentHeaterCoolerState)
-            .updateValue(this.currentState);
-        await this.setPropertyValue(this.address, this.eoj, 0xb0, { mode });
+        const mode = (_a = {
+            [this.platform.Characteristic.TargetHeaterCoolerState.COOL]: 2,
+            [this.platform.Characteristic.TargetHeaterCoolerState.HEAT]: 3,
+        }[value]) !== null && _a !== void 0 ? _a : 1;
+        this.setTargetAndCurrentMode(mode);
+        await this.setPropertyValue(this.address, this.eoj, 0xb0, {
+            mode,
+        });
         // Set temperature when targetState is HEAT or COOL
         const temperature = this.targetTemp[this.targetState];
         if (temperature != null) {
@@ -314,30 +275,7 @@ class EchonetLiteHeaterCoolerAccessory {
                     break;
                 case 0xb0: // mode
                     this.platform.log.info(`${this.accessory.displayName} - Received mode: ${p.edt.mode}`);
-                    switch (p.edt.mode) {
-                        case 2: // Cool
-                            this.targetState =
-                                this.platform.Characteristic.TargetHeaterCoolerState.COOL;
-                            this.currentState =
-                                this.platform.Characteristic.CurrentHeaterCoolerState.COOLING;
-                            break;
-                        case 3: // Heat
-                            this.targetState =
-                                this.platform.Characteristic.TargetHeaterCoolerState.HEAT;
-                            this.currentState =
-                                this.platform.Characteristic.CurrentHeaterCoolerState.HEATING;
-                            break;
-                        default:
-                            // Auto
-                            this.targetState =
-                                this.platform.Characteristic.TargetHeaterCoolerState.AUTO;
-                            this.currentState =
-                                this.platform.Characteristic.CurrentHeaterCoolerState.IDLE;
-                            break;
-                    }
-                    this.service
-                        .getCharacteristic(this.platform.Characteristic.CurrentHeaterCoolerState)
-                        .updateValue(this.currentState);
+                    this.setTargetAndCurrentMode(p.edt.mode);
                     break;
                 case 0xb3: // target temperature
                     // Auto mode triggers null temperature
@@ -366,6 +304,31 @@ class EchonetLiteHeaterCoolerAccessory {
                     break;
             }
         }
+    }
+    setTargetAndCurrentMode(mode) {
+        switch (mode) {
+            case 2: // Cool
+                this.targetState =
+                    this.platform.Characteristic.TargetHeaterCoolerState.COOL;
+                this.currentState =
+                    this.platform.Characteristic.CurrentHeaterCoolerState.COOLING;
+                break;
+            case 3: // Heat
+                this.targetState =
+                    this.platform.Characteristic.TargetHeaterCoolerState.HEAT;
+                this.currentState =
+                    this.platform.Characteristic.CurrentHeaterCoolerState.HEATING;
+                break;
+            default:
+                // Auto
+                this.targetState =
+                    this.platform.Characteristic.TargetHeaterCoolerState.AUTO;
+                this.currentState =
+                    this.platform.Characteristic.CurrentHeaterCoolerState.IDLE;
+                break;
+        }
+        this.service.updateCharacteristic(this.platform.Characteristic.TargetHeaterCoolerState, this.handleTargetHeaterCoolerStateGet());
+        this.service.updateCharacteristic(this.platform.Characteristic.CurrentHeaterCoolerState, this.handleCurrentHeaterCoolerStateGet());
     }
     /**
      * Promisified Echonet.getPropertyValue

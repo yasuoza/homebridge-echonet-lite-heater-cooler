@@ -77,14 +77,14 @@ export declare class EchonetLiteHeaterCoolerAccessory {
         };
         device: any;
     }): Promise<void>;
+    private setTargetAndCurrentMode;
     /**
      * Promisified Echonet.getPropertyValue
      */
-    getPropertyValue(address: string, eoj: number[], epc: number): Promise<any>;
+    private getPropertyValue;
     /**
      * Promisified Echonet.setPropertyValue
      */
-    setPropertyValue(address: string, eoj: number[], epc: number, value: any, // eslint-disable-line @typescript-eslint/no-explicit-any
-    maxRetry?: number): Promise<void>;
+    private setPropertyValue;
 }
 //# sourceMappingURL=accessory.d.ts.map
