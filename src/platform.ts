@@ -211,7 +211,9 @@ export class EchonetLiteHeaterCoolerPlatform implements DynamicPlatformPlugin {
     } else {
       this.log.info(`Adding new accessory: ${opts.name}(${opts.address})`);
 
-      const accessory = new this.api.platformAccessory(opts.name, opts.uuid);
+      // Let displayName to be unique
+      const displayName = `${opts.name}-${opts.uuid.slice(0, 5)}`;
+      const accessory = new this.api.platformAccessory(displayName, opts.uuid);
 
       // store a copy of the device object in the `accessory.context`
       // the `context` property can be used to store any data about the accessory you may need
