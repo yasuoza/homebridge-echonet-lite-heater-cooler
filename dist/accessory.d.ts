@@ -16,7 +16,6 @@ export declare class EchonetLiteHeaterCoolerAccessory {
     private targetState;
     private currentTemp;
     private targetTemp;
-    private swingMode;
     private updateInProgress;
     constructor(platform: EchonetLiteHeaterCoolerPlatform, accessory: PlatformAccessory);
     refreshStatus(): Promise<void>;
@@ -60,14 +59,6 @@ export declare class EchonetLiteHeaterCoolerAccessory {
      * Handle requests to set the "Heating Threshold Temperature" characteristic
      */
     handleHeatingThresholdTemperatureSet(value: CharacteristicValue): Promise<void>;
-    /**
-     * Handle requests to get the current value of the "Swing Mode" characteristic
-     */
-    handleSwingModeGet(): CharacteristicValue;
-    /**
-     * Handle requests to set the "Swing Mode" characteristic
-     */
-    handleSwingModeSet(value: CharacteristicValue): Promise<void>;
     /**
      * Handle status change event
      */

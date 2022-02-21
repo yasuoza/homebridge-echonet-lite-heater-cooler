@@ -74,13 +74,14 @@ class EchonetLiteHeaterCoolerPlatform {
     }
     async discoverDevices() {
         var _a;
+        const sleep = (msec) => new Promise((resolve) => setTimeout(resolve, msec));
         const manualDevices = (_a = this.config.devices) !== null && _a !== void 0 ? _a : [];
         for (const host of manualDevices) {
             await this.addDeviceToAccessory(host);
+            await sleep(2 * 1000);
         }
-        this.el.startDiscovery((err, res) => {
+        this.el.startDiscovery(async (err, res) => {
             if (err) {
-                this.log.error(`Failed to discovering echonet devices(${err.name}: ${err.message})`);
                 this.el.stopDiscovery();
                 return;
             }
@@ -98,7 +99,7 @@ class EchonetLiteHeaterCoolerPlatform {
                     address: address,
                 })}`);
                 if (group_code === 0x01 && class_code === 0x30) {
-                    this.addDeviceToAccessory(address, eoj);
+                    await this.addDeviceToAccessory(address, eoj);
                 }
             }
         });
@@ -106,17 +107,17 @@ class EchonetLiteHeaterCoolerPlatform {
             this.el.stopDiscovery();
         }, 60 * 1000);
     }
-    async addDeviceToAccessory(address, eoj = [1, 48, 0]) {
+    async addDeviceToAccessory(address, eoj = [1, 48, 1]) {
         var _a, _b;
         try {
-            const serial = (await (0, util_1.promisify)(this.el.getPropertyValue).bind(this.el)(address, eoj, 0x8d)).message.data.number;
-            const uuid = serial
-                ? this.api.hap.uuid.generate(serial)
+            const uid = (await (0, util_1.promisify)(this.el.getPropertyValue).bind(this.el)(address, eoj, 0x83)).message.data.uid;
+            const uuid = uid
+                ? this.api.hap.uuid.generate(uid)
                 : this.api.hap.uuid.generate(address);
             const name = (_a = (await (0, util_1.promisify)(this.el.getPropertyValue).bind(this.el)(address, eoj, 0x8c)).message.data.code) !== null && _a !== void 0 ? _a : address;
             const makerCode = (await (0, util_1.promisify)(this.el.getPropertyValue).bind(this.el)(address, eoj, 0x8a)).message.data.code;
             const maker = (_b = makerCode_1.MakerList[makerCode.toString(16).padStart(6, "0").toUpperCase()]) !== null && _b !== void 0 ? _b : "Manufacturer";
-            this.addAccessory({ serial, uuid, name, address, maker, eoj });
+            this.addAccessory({ uuid, name, address, maker, eoj });
         }
         catch (err) {
             this.log.error(`Failed to addDeviceToAccessory - address: ${address}`);
@@ -131,14 +132,15 @@ class EchonetLiteHeaterCoolerPlatform {
         }
         else {
             this.log.info(`Adding new accessory: ${opts.name}(${opts.address})`);
-            const accessory = new this.api.platformAccessory(opts.name, opts.uuid);
+            // Let displayName to be unique
+            const displayName = `${opts.name}-${opts.uuid.slice(0, 5)}`;
+            const accessory = new this.api.platformAccessory(displayName, opts.uuid);
             // store a copy of the device object in the `accessory.context`
             // the `context` property can be used to store any data about the accessory you may need
             accessory.context.address = opts.address;
             accessory.context.eoj = opts.eoj;
             accessory.context.model = opts.name;
             accessory.context.uuid = opts.uuid;
-            accessory.context.serial = opts.serial;
             accessory.context.maker = opts.maker;
             // create the accessory handler for the newly create accessory
             // this is imported from `platformAccessory.ts`
