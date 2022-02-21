@@ -157,7 +157,7 @@ export class EchonetLiteHeaterCoolerAccessory {
     }
 
     this.platform.log.debug(
-      this.accessory.displayName +
+      `${this.accessory.displayName}(${this.address})` +
         " - " +
         JSON.stringify({
           Active: this.isActive,

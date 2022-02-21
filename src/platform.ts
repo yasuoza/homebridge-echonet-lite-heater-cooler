@@ -103,13 +103,18 @@ export class EchonetLiteHeaterCoolerPlatform implements DynamicPlatformPlugin {
   }
 
   private async discoverDevices() {
+    const sleep = (msec: number) =>
+      new Promise((resolve) => setTimeout(resolve, msec));
+
     const manualDevices = this.config.devices ?? [];
 
-    this.el.startDiscovery((err, res) => {
+    for (const host of manualDevices) {
+      await this.addDeviceToAccessory(host);
+      await sleep(2 * 1000);
+    }
+
+    this.el.startDiscovery(async (err, res) => {
       if (err) {
-        this.log.error(
-          `Failed to discovering echonet devices(${err.name}: ${err.message})`,
-        );
         this.el.stopDiscovery();
         return;
       }
@@ -134,14 +139,10 @@ export class EchonetLiteHeaterCoolerPlatform implements DynamicPlatformPlugin {
         );
 
         if (group_code === 0x01 && class_code === 0x30) {
-          this.addDeviceToAccessory(address, eoj);
+          await this.addDeviceToAccessory(address, eoj);
         }
       }
     });
-
-    for (const host of manualDevices) {
-      await this.addDeviceToAccessory(host);
-    }
 
     setTimeout(() => {
       this.el.stopDiscovery();
@@ -150,7 +151,7 @@ export class EchonetLiteHeaterCoolerPlatform implements DynamicPlatformPlugin {
 
   private async addDeviceToAccessory(
     address: string,
-    eoj: number[] = [1, 48, 0],
+    eoj: number[] = [1, 48, 1],
   ) {
     try {
       const uid = (
