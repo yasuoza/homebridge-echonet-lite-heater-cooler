@@ -21,7 +21,6 @@ export class EchonetLiteHeaterCoolerAccessory {
   private targetState = 0;
   private currentTemp = -127;
   private targetTemp: { [key: number]: CharacteristicValue } = {};
-  private swingMode: CharacteristicValue = 0; // SWING_DISABLED
 
   private updateInProgress = false;
 
@@ -44,7 +43,7 @@ export class EchonetLiteHeaterCoolerAccessory {
       )
       .setCharacteristic(
         this.platform.Characteristic.SerialNumber,
-        accessory.context.serial,
+        accessory.context.uuid,
       );
 
     // get the HeaterCooler service if it exists, otherwise create a new HeaterCooler service
@@ -93,11 +92,6 @@ export class EchonetLiteHeaterCoolerAccessory {
       .setProps({ minValue: 16, maxValue: 30, minStep: 1 })
       .onGet(this.handleHeatingThresholdTemperatureGet.bind(this))
       .onSet(this.handleHeatingThresholdTemperatureSet.bind(this));
-
-    this.service
-      .getCharacteristic(this.platform.Characteristic.SwingMode)
-      .onGet(this.handleSwingModeGet.bind(this))
-      .onSet(this.handleSwingModeSet.bind(this));
 
     this.platform.el.on("notify", this.updateStates.bind(this));
 
@@ -162,18 +156,6 @@ export class EchonetLiteHeaterCoolerAccessory {
       );
     }
 
-    // swing mode
-    try {
-      const res = await this.getPropertyValue(this.address, this.eoj, 0xa3);
-      this.swingMode =
-        res.message.data.mode ??
-        this.platform.Characteristic.SwingMode.SWING_DISABLED;
-    } catch (err) {
-      this.platform.log.error(
-        `Failed to fetch swing mode: ${(err as Error).message}`,
-      );
-    }
-
     this.platform.log.debug(
       this.accessory.displayName +
         " - " +
@@ -190,7 +172,6 @@ export class EchonetLiteHeaterCoolerAccessory {
             this.targetTemp[
               this.platform.Characteristic.TargetHeaterCoolerState.HEAT
             ],
-          SwingMode: this.swingMode,
         }),
     );
 
@@ -213,10 +194,6 @@ export class EchonetLiteHeaterCoolerAccessory {
       this.targetTemp[
         this.platform.Characteristic.TargetHeaterCoolerState.HEAT
       ],
-    );
-    this.service.updateCharacteristic(
-      this.platform.Characteristic.SwingMode,
-      this.handleSwingModeGet(),
     );
   }
 
@@ -362,28 +339,6 @@ export class EchonetLiteHeaterCoolerAccessory {
   }
 
   /**
-   * Handle requests to get the current value of the "Swing Mode" characteristic
-   */
-  handleSwingModeGet() {
-    return this.swingMode;
-  }
-
-  /**
-   * Handle requests to set the "Swing Mode" characteristic
-   */
-  async handleSwingModeSet(value: CharacteristicValue) {
-    this.platform.log.info(
-      `${this.accessory.displayName} - SET SwingMode: ${value}`,
-    );
-
-    this.swingMode = value;
-
-    await this.setPropertyValue(this.address, this.eoj, 0xa3, {
-      mode: this.swingMode,
-    });
-  }
-
-  /**
    * Handle status change event
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -457,17 +412,6 @@ export class EchonetLiteHeaterCoolerAccessory {
           this.service.updateCharacteristic(
             this.platform.Characteristic.CurrentTemperature,
             p.edt.temperature,
-          );
-          break;
-
-        case 0xa3: // swing
-          this.platform.log.info(
-            `${this.accessory.displayName} - Received SwingMode: ${p.edt.mode}`,
-          );
-
-          this.service.updateCharacteristic(
-            this.platform.Characteristic.SwingMode,
-            p.edt.mode,
           );
           break;
       }

@@ -153,15 +153,15 @@ export class EchonetLiteHeaterCoolerPlatform implements DynamicPlatformPlugin {
     eoj: number[] = [1, 48, 0],
   ) {
     try {
-      const serial = (
+      const uid = (
         await promisify(this.el.getPropertyValue).bind(this.el)(
           address,
           eoj,
-          0x8d,
+          0x83,
         )
-      ).message.data.number;
-      const uuid = serial
-        ? this.api.hap.uuid.generate(serial)
+      ).message.data.uid;
+      const uuid = uid
+        ? this.api.hap.uuid.generate(uid)
         : this.api.hap.uuid.generate(address);
 
       const name =
@@ -184,7 +184,7 @@ export class EchonetLiteHeaterCoolerPlatform implements DynamicPlatformPlugin {
         MakerList[makerCode.toString(16).padStart(6, "0").toUpperCase()] ??
         "Manufacturer";
 
-      this.addAccessory({ serial, uuid, name, address, maker, eoj });
+      this.addAccessory({ uuid, name, address, maker, eoj });
     } catch (err) {
       this.log.error(`Failed to addDeviceToAccessory - address: ${address}`);
       this.log.debug(`${err}`);
@@ -192,7 +192,6 @@ export class EchonetLiteHeaterCoolerPlatform implements DynamicPlatformPlugin {
   }
 
   private addAccessory(opts: {
-    serial: string;
     uuid: string;
     name: string;
     address: string;
@@ -219,7 +218,6 @@ export class EchonetLiteHeaterCoolerPlatform implements DynamicPlatformPlugin {
       accessory.context.eoj = opts.eoj;
       accessory.context.model = opts.name;
       accessory.context.uuid = opts.uuid;
-      accessory.context.serial = opts.serial;
       accessory.context.maker = opts.maker;
 
       // create the accessory handler for the newly create accessory
