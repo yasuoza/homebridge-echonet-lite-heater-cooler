@@ -69,7 +69,7 @@ class EchonetLiteHeaterCoolerAccessory {
     async refreshStatus() {
         var _a, _b, _c, _d;
         var _e, _f, _g, _h;
-        this.platform.log.debug(`${this.accessory.displayName} - Refresing status...`);
+        this.platform.log.debug(`${this.accessory.displayName}(${this.address}) - Refresing status...`);
         // power
         try {
             const power = await this.getPropertyValue(this.address, this.eoj, 0x80);

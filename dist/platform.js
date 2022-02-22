@@ -73,15 +73,18 @@ class EchonetLiteHeaterCoolerPlatform {
         return true;
     }
     async discoverDevices() {
-        var _a;
+        var _a, _b;
         const sleep = (msec) => new Promise((resolve) => setTimeout(resolve, msec));
         const manualDevices = (_a = this.config.devices) !== null && _a !== void 0 ? _a : [];
         for (const host of manualDevices) {
             await this.addDeviceToAccessory(host);
-            await sleep(2 * 1000);
         }
+        const sleepSec = (_b = this.config.requestTimeout) !== null && _b !== void 0 ? _b : 20;
+        this.log.info(`Waiting for ${sleepSec} seconds to start discovering ECHONET Lite devices...`);
+        await sleep(sleepSec * 1000);
         this.el.startDiscovery(async (err, res) => {
             if (err) {
+                this.log.error(`Failed to discovering ECHONET Lite(${err.name}: ${err.message})`);
                 this.el.stopDiscovery();
                 return;
             }
@@ -104,6 +107,7 @@ class EchonetLiteHeaterCoolerPlatform {
             }
         });
         setTimeout(() => {
+            this.log.info("Finished discovering ECHONET Lite devices");
             this.el.stopDiscovery();
         }, 60 * 1000);
     }
