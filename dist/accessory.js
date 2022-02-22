@@ -67,8 +67,8 @@ class EchonetLiteHeaterCoolerAccessory {
         });
     }
     async refreshStatus() {
-        var _a, _b, _c, _d;
-        var _e, _f, _g, _h;
+        var _a, _b, _c;
+        var _d, _e;
         this.platform.log.debug(`${this.accessory.displayName}(${this.address}) - Refresing status...`);
         // power
         try {
@@ -98,9 +98,13 @@ class EchonetLiteHeaterCoolerAccessory {
         // target temp
         try {
             const res = await this.getPropertyValue(this.address, this.eoj, 0xb3);
-            const defaultTargetTemp = (_b = res.message.data.temperature) !== null && _b !== void 0 ? _b : 16;
-            (_c = (_e = this.targetTemp)[_f = this.platform.Characteristic.TargetHeaterCoolerState.COOL]) !== null && _c !== void 0 ? _c : (_e[_f] = defaultTargetTemp);
-            (_d = (_g = this.targetTemp)[_h = this.platform.Characteristic.TargetHeaterCoolerState.HEAT]) !== null && _d !== void 0 ? _d : (_g[_h] = defaultTargetTemp);
+            const targetTemp = res.message.data.temperature;
+            const { COOL, HEAT } = this.platform.Characteristic.TargetHeaterCoolerState;
+            (_b = (_d = this.targetTemp)[COOL]) !== null && _b !== void 0 ? _b : (_d[COOL] = targetTemp !== null && targetTemp !== void 0 ? targetTemp : 16);
+            (_c = (_e = this.targetTemp)[HEAT]) !== null && _c !== void 0 ? _c : (_e[HEAT] = targetTemp !== null && targetTemp !== void 0 ? targetTemp : 16);
+            if (targetTemp != null && this.targetTemp[this.targetState] != null) {
+                this.targetTemp[this.targetState] = targetTemp;
+            }
         }
         catch (err) {
             this.platform.log.error(`Failed to fetch target temperature: ${err.message}`);
