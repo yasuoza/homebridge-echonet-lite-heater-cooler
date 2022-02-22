@@ -110,11 +110,19 @@ export class EchonetLiteHeaterCoolerPlatform implements DynamicPlatformPlugin {
 
     for (const host of manualDevices) {
       await this.addDeviceToAccessory(host);
-      await sleep(2 * 1000);
     }
+
+    const sleepSec = this.config.requestTimeout ?? 20;
+    this.log.info(
+      `Waiting for ${sleepSec} seconds to start discovering ECHONET Lite devices...`,
+    );
+    await sleep(sleepSec * 1000);
 
     this.el.startDiscovery(async (err, res) => {
       if (err) {
+        this.log.error(
+          `Failed to discovering ECHONET Lite(${err.name}: ${err.message})`,
+        );
         this.el.stopDiscovery();
         return;
       }
@@ -145,7 +153,7 @@ export class EchonetLiteHeaterCoolerPlatform implements DynamicPlatformPlugin {
     });
 
     setTimeout(() => {
-      this.log.debug("Finish discovering EchonetLite devices");
+      this.log.info("Finished discovering ECHONET Lite devices");
       this.el.stopDiscovery();
     }, 60 * 1000);
   }
