@@ -106,7 +106,7 @@ export class EchonetLiteHeaterCoolerAccessory {
 
   async refreshStatus() {
     this.platform.log.debug(
-      `${this.accessory.displayName} - Refresing status...`,
+      `${this.accessory.displayName}(${this.address}) - Refresing status...`,
     );
 
     // power

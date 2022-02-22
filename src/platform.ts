@@ -145,6 +145,7 @@ export class EchonetLiteHeaterCoolerPlatform implements DynamicPlatformPlugin {
     });
 
     setTimeout(() => {
+      this.log.debug("Finish discovering EchonetLite devices");
       this.el.stopDiscovery();
     }, 60 * 1000);
   }
