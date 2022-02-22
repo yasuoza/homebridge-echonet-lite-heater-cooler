@@ -17,6 +17,7 @@ export declare class EchonetLiteHeaterCoolerAccessory {
     private currentTemp;
     private targetTemp;
     private updateInProgress;
+    private doStateUpdate;
     constructor(platform: EchonetLiteHeaterCoolerPlatform, accessory: PlatformAccessory);
     refreshStatus(): Promise<void>;
     /**
@@ -62,13 +63,14 @@ export declare class EchonetLiteHeaterCoolerAccessory {
     /**
      * Handle status change event
      */
-    updateStates(res: {
+    handleDeviceNotifyEvent(event: {
         message: {
             prop: any;
         };
         device: any;
     }): Promise<void>;
-    private setTargetAndCurrentMode;
+    private setHBModeByEchonetMode;
+    private pushChanges;
     /**
      * Promisified Echonet.getPropertyValue
      */

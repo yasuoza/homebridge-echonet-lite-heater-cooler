@@ -109,7 +109,7 @@ class EchonetLiteHeaterCoolerPlatform {
         setTimeout(() => {
             this.log.info("Finished discovering ECHONET Lite devices");
             this.el.stopDiscovery();
-        }, 60 * 1000);
+        }, 30 * 1000);
     }
     async addDeviceToAccessory(address, eoj = [1, 48, 1]) {
         var _a, _b;

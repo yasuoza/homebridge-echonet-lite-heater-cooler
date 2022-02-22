@@ -19,6 +19,7 @@ class EchonetLiteHeaterCoolerAccessory {
         this.currentTemp = -127;
         this.targetTemp = {};
         this.updateInProgress = false;
+        this.doStateUpdate = new rxjs_1.Subject();
         this.address = accessory.context.address;
         this.eoj = accessory.context.eoj;
         this.accessory
@@ -58,12 +59,25 @@ class EchonetLiteHeaterCoolerAccessory {
             .setProps({ minValue: 16, maxValue: 30, minStep: 1 })
             .onGet(this.handleHeatingThresholdTemperatureGet.bind(this))
             .onSet(this.handleHeatingThresholdTemperatureSet.bind(this));
-        this.platform.el.on("notify", this.updateStates.bind(this));
+        this.platform.el.on("notify", this.handleDeviceNotifyEvent.bind(this));
         this.refreshStatus();
         (0, rxjs_1.interval)(this.platform.config.refreshInterval * 60 * 1000)
             .pipe((0, operators_1.skipWhile)(() => this.updateInProgress))
             .subscribe(async () => {
             await this.refreshStatus();
+        });
+        this.doStateUpdate
+            .pipe((0, operators_1.tap)(() => {
+            this.updateInProgress = true;
+        }), (0, operators_1.debounceTime)(1 * 100))
+            .subscribe(async () => {
+            try {
+                await this.pushChanges();
+            }
+            catch (err) {
+                this.platform.log.error(`Failed to pushChanges: ${err.message}`);
+            }
+            this.updateInProgress = false;
         });
     }
     async refreshStatus() {
@@ -82,7 +96,7 @@ class EchonetLiteHeaterCoolerAccessory {
         try {
             const res = await this.getPropertyValue(this.address, this.eoj, 0xb0);
             const mode = res.message.data.mode;
-            this.setTargetAndCurrentMode(mode);
+            this.setHBModeByEchonetMode(mode);
         }
         catch (err) {
             this.platform.log.error(`Failed to fetch target state: ${err.message}`);
@@ -136,8 +150,7 @@ class EchonetLiteHeaterCoolerAccessory {
     async handleActiveSet(value) {
         this.platform.log.info(`${this.accessory.displayName} - SET Active: ${value}`);
         this.isActive = value;
-        const status = this.isActive === this.platform.Characteristic.Active.ACTIVE;
-        await this.setPropertyValue(this.address, this.eoj, 0x80, { status });
+        this.doStateUpdate.next();
     }
     /**
      * Handle requests to get the current value of the "Current Heater-Cooler State" characteristic
@@ -155,24 +168,12 @@ class EchonetLiteHeaterCoolerAccessory {
      * Handle requests to set the "Target Heater-Cooler State" characteristic
      */
     async handleTargetHeaterCoolerStateSet(value) {
-        var _a;
         this.platform.log.info(`${this.accessory.displayName} - SET TargetHeaterCoolerState: ${value}`);
-        const mode = (_a = {
-            [this.platform.Characteristic.TargetHeaterCoolerState.COOL]: 2,
-            [this.platform.Characteristic.TargetHeaterCoolerState.HEAT]: 3,
-        }[value]) !== null && _a !== void 0 ? _a : 1;
-        this.setTargetAndCurrentMode(mode);
-        await this.setPropertyValue(this.address, this.eoj, 0xb0, {
-            mode,
-        });
-        // Set temperature when targetState is HEAT or COOL
-        const temperature = this.targetTemp[this.targetState];
-        if (temperature != null) {
-            this.platform.log.info(`${this.accessory.displayName} - SET TargetTemperature: ${temperature}`);
-            await this.setPropertyValue(this.address, this.eoj, 0xb3, {
-                temperature,
-            });
-        }
+        this.targetState = value;
+        this.currentState = this.targetState + 1;
+        this.service.updateCharacteristic(this.platform.Characteristic.TargetHeaterCoolerState, this.handleTargetHeaterCoolerStateGet());
+        this.service.updateCharacteristic(this.platform.Characteristic.CurrentHeaterCoolerState, this.handleCurrentHeaterCoolerStateGet());
+        this.doStateUpdate.next();
     }
     /**
      * Handle requests to get the current value of the "Current Temperature" characteristic
@@ -194,13 +195,7 @@ class EchonetLiteHeaterCoolerAccessory {
         this.platform.log.info(`${this.accessory.displayName} - SET CoolingThresholdTemperature: ${value}`);
         this.targetTemp[this.platform.Characteristic.TargetHeaterCoolerState.COOL] =
             value;
-        if (this.targetState !==
-            this.platform.Characteristic.TargetHeaterCoolerState.COOL) {
-            return;
-        }
-        await this.setPropertyValue(this.address, this.eoj, 0xb3, {
-            temperature: value,
-        });
+        this.doStateUpdate.next();
     }
     /**
      * Handle requests to get the current value of the "Heating Threshold Temperature" characteristic
@@ -216,21 +211,14 @@ class EchonetLiteHeaterCoolerAccessory {
         this.platform.log.info(`${this.accessory.displayName} - SET HeatingThresholdTemperature: ${value}`);
         this.targetTemp[this.platform.Characteristic.TargetHeaterCoolerState.HEAT] =
             value;
-        if (this.targetState !==
-            this.platform.Characteristic.TargetHeaterCoolerState.HEAT) {
-            return;
-        }
-        await this.setPropertyValue(this.address, this.eoj, 0xb3, {
-            temperature: value,
-        });
+        this.doStateUpdate.next();
     }
     /**
      * Handle status change event
      */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async updateStates(res) {
-        const { prop } = res.message;
-        if (res.device.address !== this.address) {
+    async handleDeviceNotifyEvent(event) {
+        const { prop } = event.message;
+        if (event.device.address !== this.address) {
             return;
         }
         for (const p of prop) {
@@ -247,7 +235,7 @@ class EchonetLiteHeaterCoolerAccessory {
                     break;
                 case 0xb0: // mode
                     this.platform.log.info(`${this.accessory.displayName} - Received mode: ${p.edt.mode}`);
-                    this.setTargetAndCurrentMode(p.edt.mode);
+                    this.setHBModeByEchonetMode(p.edt.mode);
                     break;
                 case 0xb3: // target temperature
                     // Auto mode triggers null temperature
@@ -266,14 +254,10 @@ class EchonetLiteHeaterCoolerAccessory {
                             break;
                     }
                     break;
-                case 0xbb: // current temperature
-                    this.platform.log.info(`${this.accessory.displayName} - Received CurrentTemperature: ${p.edt.temperature}`);
-                    this.service.updateCharacteristic(this.platform.Characteristic.CurrentTemperature, p.edt.temperature);
-                    break;
             }
         }
     }
-    setTargetAndCurrentMode(mode) {
+    setHBModeByEchonetMode(mode) {
         switch (mode) {
             case 2: // Cool
                 this.targetState =
@@ -298,6 +282,27 @@ class EchonetLiteHeaterCoolerAccessory {
         this.service.updateCharacteristic(this.platform.Characteristic.TargetHeaterCoolerState, this.handleTargetHeaterCoolerStateGet());
         this.service.updateCharacteristic(this.platform.Characteristic.CurrentHeaterCoolerState, this.handleCurrentHeaterCoolerStateGet());
     }
+    async pushChanges() {
+        var _a;
+        const status = this.isActive === this.platform.Characteristic.Active.ACTIVE;
+        await this.setPropertyValue(this.address, this.eoj, 0x80, { status });
+        if (this.isActive) {
+            const mode = (_a = {
+                [this.platform.Characteristic.TargetHeaterCoolerState.COOL]: 2,
+                [this.platform.Characteristic.TargetHeaterCoolerState.HEAT]: 3,
+            }[this.targetState]) !== null && _a !== void 0 ? _a : 1;
+            await this.setPropertyValue(this.address, this.eoj, 0xb0, {
+                mode,
+            });
+            // Set temperature when targetState is HEAT or COOL
+            const temperature = this.targetTemp[this.targetState];
+            if (temperature != null) {
+                await this.setPropertyValue(this.address, this.eoj, 0xb3, {
+                    temperature,
+                });
+            }
+        }
+    }
     /**
      * Promisified Echonet.getPropertyValue
      */
@@ -311,8 +316,8 @@ class EchonetLiteHeaterCoolerAccessory {
     maxRetry = 10) {
         const setPropertyValueFunc = async (address, eoj, epc, value, // eslint-disable-line @typescript-eslint/no-explicit-any
         retries) => {
+            this.platform.log.debug(`${this.accessory.displayName}(${this.address}) - set value: ${JSON.stringify(value)}`);
             try {
-                this.updateInProgress = true;
                 await (0, util_1.promisify)(this.platform.el.setPropertyValue).bind(this.platform.el)(address, eoj, epc, value);
             }
             catch (err) {
@@ -327,9 +332,6 @@ class EchonetLiteHeaterCoolerAccessory {
                 const sleep = (maxRetry - retries + 1) * 1000;
                 await new Promise((_) => setTimeout(_, sleep));
                 await setPropertyValueFunc(address, eoj, epc, value, retries - 1);
-            }
-            finally {
-                this.updateInProgress = false;
             }
         };
         return await setPropertyValueFunc(address, eoj, epc, value, maxRetry);
