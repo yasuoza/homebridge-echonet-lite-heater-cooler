@@ -143,13 +143,16 @@ export class EchonetLiteHeaterCoolerAccessory {
     // target temp
     try {
       const res = await this.getPropertyValue(this.address, this.eoj, 0xb3);
-      const defaultTargetTemp = res.message.data.temperature ?? 16;
-      this.targetTemp[
-        this.platform.Characteristic.TargetHeaterCoolerState.COOL
-      ] ??= defaultTargetTemp;
-      this.targetTemp[
-        this.platform.Characteristic.TargetHeaterCoolerState.HEAT
-      ] ??= defaultTargetTemp;
+      const targetTemp: number | undefined = res.message.data.temperature;
+
+      const { COOL, HEAT } =
+        this.platform.Characteristic.TargetHeaterCoolerState;
+
+      this.targetTemp[COOL] ??= targetTemp ?? 16;
+      this.targetTemp[HEAT] ??= targetTemp ?? 16;
+      if (targetTemp != null && this.targetTemp[this.targetState] != null) {
+        this.targetTemp[this.targetState] = targetTemp;
+      }
     } catch (err) {
       this.platform.log.error(
         `Failed to fetch target temperature: ${(err as Error).message}`,
