@@ -131,7 +131,9 @@ export class EchonetLiteHeaterCoolerAccessory {
     // power
     try {
       const power = await this.getPropertyValue(this.address, this.eoj, 0x80);
-      this.isActive = power.message.data.status;
+      this.isActive = power.message.data.status
+        ? this.platform.Characteristic.Active.ACTIVE
+        : this.platform.Characteristic.Active.INACTIVE;
     } catch (err) {
       this.platform.log.error(
         `Failed to fetch power: ${(err as Error).message}`,
