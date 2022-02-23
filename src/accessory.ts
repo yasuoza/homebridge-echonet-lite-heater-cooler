@@ -482,7 +482,7 @@ export class EchonetLiteHeaterCoolerAccessory {
     eoj: number[],
     epc: number,
     value: any, // eslint-disable-line @typescript-eslint/no-explicit-any
-    maxRetry = 10,
+    maxRetry = 5,
   ) {
     const setPropertyValueFunc = async (
       address: string,
@@ -502,7 +502,7 @@ export class EchonetLiteHeaterCoolerAccessory {
           this.platform.el,
         )(address, eoj, epc, value);
       } catch (err) {
-        if (retries === 1) {
+        if (retries === 0) {
           this.platform.log.error(
             `${
               this.accessory.displayName
