@@ -113,10 +113,10 @@ export class EchonetLiteHeaterCoolerAccessory {
       )
       .subscribe(async () => {
         try {
-          await this.pushChanges();
+          await this.applyStatusUpdate();
         } catch (err) {
           this.platform.log.error(
-            `Failed to pushChanges: ${(err as Error).message}`,
+            `Failed to applyStatusUpdate: ${(err as Error).message}`,
           );
         }
         this.updateInProgress = false;
@@ -440,7 +440,7 @@ export class EchonetLiteHeaterCoolerAccessory {
     );
   }
 
-  private async pushChanges() {
+  private async applyStatusUpdate() {
     const status = this.isActive === this.platform.Characteristic.Active.ACTIVE;
     await this.setPropertyValue(this.address, this.eoj, 0x80, { status });
 
