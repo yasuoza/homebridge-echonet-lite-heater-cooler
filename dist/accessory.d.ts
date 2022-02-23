@@ -70,7 +70,7 @@ export declare class EchonetLiteHeaterCoolerAccessory {
         device: any;
     }): Promise<void>;
     private setHBModeByEchonetMode;
-    private pushChanges;
+    private applyStatusUpdate;
     /**
      * Promisified Echonet.getPropertyValue
      */

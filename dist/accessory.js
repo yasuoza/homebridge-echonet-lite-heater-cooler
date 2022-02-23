@@ -72,10 +72,10 @@ class EchonetLiteHeaterCoolerAccessory {
         }), (0, operators_1.debounceTime)(1 * 100))
             .subscribe(async () => {
             try {
-                await this.pushChanges();
+                await this.applyStatusUpdate();
             }
             catch (err) {
-                this.platform.log.error(`Failed to pushChanges: ${err.message}`);
+                this.platform.log.error(`Failed to applyStatusUpdate: ${err.message}`);
             }
             this.updateInProgress = false;
         });
@@ -282,7 +282,7 @@ class EchonetLiteHeaterCoolerAccessory {
         this.service.updateCharacteristic(this.platform.Characteristic.TargetHeaterCoolerState, this.handleTargetHeaterCoolerStateGet());
         this.service.updateCharacteristic(this.platform.Characteristic.CurrentHeaterCoolerState, this.handleCurrentHeaterCoolerStateGet());
     }
-    async pushChanges() {
+    async applyStatusUpdate() {
         var _a;
         const status = this.isActive === this.platform.Characteristic.Active.ACTIVE;
         await this.setPropertyValue(this.address, this.eoj, 0x80, { status });
@@ -313,7 +313,7 @@ class EchonetLiteHeaterCoolerAccessory {
      * Promisified Echonet.setPropertyValue
      */
     async setPropertyValue(address, eoj, epc, value, // eslint-disable-line @typescript-eslint/no-explicit-any
-    maxRetry = 10) {
+    maxRetry = 5) {
         const setPropertyValueFunc = async (address, eoj, epc, value, // eslint-disable-line @typescript-eslint/no-explicit-any
         retries) => {
             this.platform.log.debug(`${this.accessory.displayName}(${this.address}) - set value: ${JSON.stringify(value)}`);
@@ -321,7 +321,7 @@ class EchonetLiteHeaterCoolerAccessory {
                 await (0, util_1.promisify)(this.platform.el.setPropertyValue).bind(this.platform.el)(address, eoj, epc, value);
             }
             catch (err) {
-                if (retries === 1) {
+                if (retries === 0) {
                     this.platform.log.error(`${this.accessory.displayName} - Failed to set value: ${JSON.stringify(value)}`);
                     this.platform.log.debug(`${err}`);
                     return;
