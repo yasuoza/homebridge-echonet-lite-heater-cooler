@@ -1,5 +1,6 @@
 import { PlatformAccessory, CharacteristicValue } from "homebridge";
 import { EchonetLiteHeaterCoolerPlatform } from "./platform";
+import { ELProp } from "./types";
 /**
  * Platform Accessory
  * An instance of this class is created for each accessory your platform registers
@@ -47,7 +48,7 @@ export declare class EchonetLiteHeaterCoolerAccessory {
     /**
      * Handle requests to get the current value of the "Cooling Threshold Temperature" characteristic
      */
-    handleCoolingThresholdTemperatureGet(): CharacteristicValue;
+    handleCoolingThresholdTemperatureGet(): number;
     /**
      * Handle requests to set the "Cooling Threshold Temperature" characteristic
      */
@@ -55,7 +56,7 @@ export declare class EchonetLiteHeaterCoolerAccessory {
     /**
      * Handle requests to get the current value of the "Heating Threshold Temperature" characteristic
      */
-    handleHeatingThresholdTemperatureGet(): CharacteristicValue;
+    handleHeatingThresholdTemperatureGet(): number;
     /**
      * Handle requests to set the "Heating Threshold Temperature" characteristic
      */
@@ -65,19 +66,16 @@ export declare class EchonetLiteHeaterCoolerAccessory {
      */
     handleDeviceNotifyEvent(event: {
         message: {
-            prop: any;
+            prop: ELProp[];
         };
         device: any;
     }): Promise<void>;
     private setHBModeByEchonetMode;
     private applyStatusUpdate;
     /**
-     * Promisified Echonet.getPropertyValue
+     * Promisified Echonet.send
      */
-    private getPropertyValue;
-    /**
-     * Promisified Echonet.setPropertyValue
-     */
-    private setPropertyValue;
+    private send;
+    private propToString;
 }
 //# sourceMappingURL=accessory.d.ts.map
