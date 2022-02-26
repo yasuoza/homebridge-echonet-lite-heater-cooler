@@ -163,6 +163,12 @@ export class EchonetLiteHeaterCoolerPlatform implements DynamicPlatformPlugin {
     eoj: number[] = [1, 48, 1],
   ) {
     try {
+      const maps = await promisify(this.el.getPropertyMaps).bind(this.el)(
+        address,
+        eoj,
+      );
+      const getEPCs: number[] = maps["message"]["data"]["get"];
+
       const uid = (
         await promisify(this.el.getPropertyValue).bind(this.el)(
           address,
@@ -174,14 +180,15 @@ export class EchonetLiteHeaterCoolerPlatform implements DynamicPlatformPlugin {
         ? this.api.hap.uuid.generate(uid)
         : this.api.hap.uuid.generate(address);
 
-      const name =
-        (
-          await promisify(this.el.getPropertyValue).bind(this.el)(
-            address,
-            eoj,
-            0x8c,
-          )
-        ).message.data.code ?? address;
+      const name = getEPCs.includes(0x8c)
+        ? (
+            await promisify(this.el.getPropertyValue).bind(this.el)(
+              address,
+              eoj,
+              0x8c,
+            )
+          ).message.data.code
+        : address;
 
       const makerCode = (
         await promisify(this.el.getPropertyValue).bind(this.el)(
