@@ -112,15 +112,19 @@ class EchonetLiteHeaterCoolerPlatform {
         }, 30 * 1000);
     }
     async addDeviceToAccessory(address, eoj = [1, 48, 1]) {
-        var _a, _b;
+        var _a;
         try {
+            const maps = await (0, util_1.promisify)(this.el.getPropertyMaps).bind(this.el)(address, eoj);
+            const getEPCs = maps["message"]["data"]["get"];
             const uid = (await (0, util_1.promisify)(this.el.getPropertyValue).bind(this.el)(address, eoj, 0x83)).message.data.uid;
             const uuid = uid
                 ? this.api.hap.uuid.generate(uid)
                 : this.api.hap.uuid.generate(address);
-            const name = (_a = (await (0, util_1.promisify)(this.el.getPropertyValue).bind(this.el)(address, eoj, 0x8c)).message.data.code) !== null && _a !== void 0 ? _a : address;
+            const name = getEPCs.includes(0x8c)
+                ? (await (0, util_1.promisify)(this.el.getPropertyValue).bind(this.el)(address, eoj, 0x8c)).message.data.code
+                : address;
             const makerCode = (await (0, util_1.promisify)(this.el.getPropertyValue).bind(this.el)(address, eoj, 0x8a)).message.data.code;
-            const maker = (_b = makerCode_1.MakerList[makerCode.toString(16).padStart(6, "0").toUpperCase()]) !== null && _b !== void 0 ? _b : "Manufacturer";
+            const maker = (_a = makerCode_1.MakerList[makerCode.toString(16).padStart(6, "0").toUpperCase()]) !== null && _a !== void 0 ? _a : "Manufacturer";
             this.addAccessory({ uuid, name, address, maker, eoj });
         }
         catch (err) {
