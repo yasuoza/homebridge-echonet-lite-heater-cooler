@@ -101,7 +101,9 @@ export class EchonetLiteHeaterCoolerAccessory {
       this.refreshStatus();
     } catch (err) {
       this.platform.log.error(
-        `Failed to refreshStatus: ${(err as Error).message}`,
+        `${this.accessory.displayName}(${
+          this.address
+        }) - Failed to initial refreshStatus: ${(err as Error).message}`,
       );
     }
 
@@ -111,8 +113,10 @@ export class EchonetLiteHeaterCoolerAccessory {
         try {
           await this.refreshStatus();
         } catch (err) {
-          this.platform.log.error(
-            `Failed to refreshStatus: ${(err as Error).message}`,
+          this.platform.log.debug(
+            `${this.accessory.displayName}(${
+              this.address
+            }) - Failed to refreshStatus: ${(err as Error).message}`,
           );
         }
       });
@@ -129,7 +133,9 @@ export class EchonetLiteHeaterCoolerAccessory {
           await this.applyStatusUpdate();
         } catch (err) {
           this.platform.log.error(
-            `Failed to applyStatusUpdate: ${(err as Error).message}`,
+            `${this.accessory.displayName}(${
+              this.address
+            }) - Failed to applyStatusUpdate: ${(err as Error).message}`,
           );
         }
         this.updateInProgress = false;
