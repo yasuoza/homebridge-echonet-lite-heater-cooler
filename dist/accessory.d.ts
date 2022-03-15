@@ -12,7 +12,7 @@ export declare class EchonetLiteHeaterCoolerAccessory {
     private service;
     private address;
     private eoj;
-    private isActive;
+    private active;
     private currentState;
     private targetState;
     private currentTemp;

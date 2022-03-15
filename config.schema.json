@@ -10,6 +10,12 @@
         "required": true,
         "default": "HeaterCooler"
       },
+      "debug": {
+        "type": "boolean",
+        "title": "Debug logging",
+        "required": false,
+        "default": false
+      },
       "refreshInterval": {
         "title": "Status refresh interval minutes",
         "type": "number",

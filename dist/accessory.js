@@ -13,7 +13,7 @@ class EchonetLiteHeaterCoolerAccessory {
     constructor(platform, accessory) {
         this.platform = platform;
         this.accessory = accessory;
-        this.isActive = 0; // INACTIVE;
+        this.active = 0; // INACTIVE;
         this.currentState = 0;
         this.targetState = 0;
         this.currentTemp = -127;
@@ -107,7 +107,7 @@ class EchonetLiteHeaterCoolerAccessory {
             switch (p.epc) {
                 // status
                 case 0x80: {
-                    this.isActive = p.edt["status"]
+                    this.active = p.edt["status"]
                         ? this.platform.Characteristic.Active.ACTIVE
                         : this.platform.Characteristic.Active.INACTIVE;
                     return;
@@ -141,7 +141,7 @@ class EchonetLiteHeaterCoolerAccessory {
         this.platform.log.debug(`${this.accessory.displayName}(${this.address})` +
             " - " +
             JSON.stringify({
-                Active: this.isActive,
+                Active: this.active,
                 CurrentTemperature: this.currentTemp,
                 TargetHeaterCoolerState: this.targetState,
                 CurrentHeaterCoolerState: this.currentState,
@@ -157,14 +157,14 @@ class EchonetLiteHeaterCoolerAccessory {
      * Handle requests to get the current value of the "Active" characteristic
      */
     handleActiveGet() {
-        return this.isActive;
+        return this.active;
     }
     /**
      * Handle requests to set the "Active" characteristic
      */
     async handleActiveSet(value) {
         this.platform.log.info(`${this.accessory.displayName} - SET Active: ${value}`);
-        this.isActive = value;
+        this.active = value;
         this.doStateUpdate.next();
     }
     /**
@@ -247,10 +247,10 @@ class EchonetLiteHeaterCoolerAccessory {
                 // status
                 case 0x80: {
                     this.platform.log.info(`${this.accessory.displayName} - Received Active: ${p.edt.status}`);
-                    this.isActive = p.edt.status
+                    this.active = p.edt.status
                         ? this.platform.Characteristic.Active.ACTIVE
                         : this.platform.Characteristic.Active.INACTIVE;
-                    this.service.updateCharacteristic(this.platform.Characteristic.Active, this.isActive);
+                    this.service.updateCharacteristic(this.platform.Characteristic.Active, this.active);
                     return;
                 }
                 // mode
@@ -325,14 +325,14 @@ class EchonetLiteHeaterCoolerAccessory {
     }
     async applyStatusUpdate() {
         var _a;
-        const status = this.isActive === this.platform.Characteristic.Active.ACTIVE;
+        const status = this.active === this.platform.Characteristic.Active.ACTIVE;
         const prop = [
             {
                 epc: 0x80,
                 edt: { status },
             },
         ];
-        if (this.isActive) {
+        if (this.active) {
             const mode = (_a = {
                 [this.platform.Characteristic.TargetHeaterCoolerState.COOL]: 2,
                 [this.platform.Characteristic.TargetHeaterCoolerState.HEAT]: 3,

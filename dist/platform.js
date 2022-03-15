@@ -17,7 +17,6 @@ class EchonetLiteHeaterCoolerPlatform {
         this.Service = this.api.hap.Service;
         this.Characteristic = this.api.hap.Characteristic;
         this.accessories = [];
-        this.log.debug("Finished initializing platform:", config.name);
         if (!this.verifyConfig(config)) {
             this.log.error("Invalid configuration. Please check your configuration.");
             // Dummy data to pass Strict Property Initialization
@@ -30,6 +29,14 @@ class EchonetLiteHeaterCoolerPlatform {
             return;
         }
         this.config = config;
+        this.log = this.config.debug
+            ? Object.assign(Object.create(log), {
+                debug: (message, ...parameters) => {
+                    this.log.info(`[DEBUG]: ${message}`, ...parameters);
+                },
+            })
+            : log;
+        this.log.debug("Finished initializing platform:", config.name);
         const timeout = ((_a = config.requestTimeout) !== null && _a !== void 0 ? _a : 20) * 1000;
         this.el = new node_echonet_lite_1.default({ type: "lan", timeout: timeout });
         this.api.on("didFinishLaunching" /* DID_FINISH_LAUNCHING */, () => {
