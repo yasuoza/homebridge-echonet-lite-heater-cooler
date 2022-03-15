@@ -4,6 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.EchonetLiteHeaterCoolerPlatform = void 0;
+const logger_1 = require("homebridge/lib/logger");
 const node_echonet_lite_1 = __importDefault(require("node-echonet-lite"));
 const util_1 = require("util");
 const accessory_1 = require("./accessory");
@@ -18,7 +19,7 @@ class EchonetLiteHeaterCoolerPlatform {
         this.Characteristic = this.api.hap.Characteristic;
         this.accessories = [];
         if (!this.verifyConfig(config)) {
-            this.log.error("Invalid configuration. Please check your configuration.");
+            log.error("Invalid configuration. Please check your configuration.");
             // Dummy data to pass Strict Property Initialization
             this.config = {
                 ...config,
@@ -29,13 +30,9 @@ class EchonetLiteHeaterCoolerPlatform {
             return;
         }
         this.config = config;
-        this.log = this.config.debug
-            ? Object.assign(Object.create(log), {
-                debug: (message, ...parameters) => {
-                    this.log.info(`[DEBUG]: ${message}`, ...parameters);
-                },
-            })
-            : log;
+        logger_1.Logger.forceColor();
+        logger_1.Logger.setDebugEnabled(this.config.debug);
+        this.log = new logger_1.Logger(log.prefix);
         this.log.debug("Finished initializing platform:", config.name);
         const timeout = ((_a = config.requestTimeout) !== null && _a !== void 0 ? _a : 20) * 1000;
         this.el = new node_echonet_lite_1.default({ type: "lan", timeout: timeout });

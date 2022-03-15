@@ -1,4 +1,5 @@
-import { API, DynamicPlatformPlugin, Logger, PlatformAccessory, PlatformConfig, Service, Characteristic } from "homebridge";
+import { API, DynamicPlatformPlugin, PlatformAccessory, PlatformConfig, Service, Characteristic } from "homebridge";
+import { Logger } from "homebridge/lib/logger";
 import EchonetLite from "node-echonet-lite";
 import { EchonetLiteHeaterCoolerConfig } from "./settings";
 export declare class EchonetLiteHeaterCoolerPlatform implements DynamicPlatformPlugin {

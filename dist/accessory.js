@@ -64,7 +64,7 @@ class EchonetLiteHeaterCoolerAccessory {
             this.refreshStatus();
         }
         catch (err) {
-            this.platform.log.error(`Failed to refreshStatus: ${err.message}`);
+            this.platform.log.error(`${this.accessory.displayName}(${this.address}) - Failed to initial refreshStatus: ${err.message}`);
         }
         (0, rxjs_1.interval)(this.platform.config.refreshInterval * 60 * 1000)
             .pipe((0, operators_1.skipWhile)(() => this.updateInProgress))
@@ -73,7 +73,7 @@ class EchonetLiteHeaterCoolerAccessory {
                 await this.refreshStatus();
             }
             catch (err) {
-                this.platform.log.error(`Failed to refreshStatus: ${err.message}`);
+                this.platform.log.debug(`${this.accessory.displayName}(${this.address}) - Failed to refreshStatus: ${err.message}`);
             }
         });
         this.doStateUpdate
@@ -85,7 +85,7 @@ class EchonetLiteHeaterCoolerAccessory {
                 await this.applyStatusUpdate();
             }
             catch (err) {
-                this.platform.log.error(`Failed to applyStatusUpdate: ${err.message}`);
+                this.platform.log.error(`${this.accessory.displayName}(${this.address}) - Failed to applyStatusUpdate: ${err.message}`);
             }
             this.updateInProgress = false;
         });
