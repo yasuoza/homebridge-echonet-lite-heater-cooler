@@ -15,4 +15,6 @@ export interface EchonetLiteHeaterCoolerConfig extends PlatformConfig {
   devices?: [string];
   refreshInterval: number;
   requestTimeout: number;
+
+  debug?: boolean;
 }

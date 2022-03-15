@@ -34,8 +34,6 @@ export class EchonetLiteHeaterCoolerPlatform implements DynamicPlatformPlugin {
     config: PlatformConfig,
     public readonly api: API,
   ) {
-    this.log.debug("Finished initializing platform:", config.name);
-
     if (!this.verifyConfig(config)) {
       this.log.error("Invalid configuration. Please check your configuration.");
 
@@ -50,6 +48,15 @@ export class EchonetLiteHeaterCoolerPlatform implements DynamicPlatformPlugin {
     }
 
     this.config = config;
+    this.log = this.config.debug
+      ? Object.assign(Object.create(log), {
+          debug: (message: string, ...parameters: unknown[]) => {
+            this.log.info(`[DEBUG]: ${message}`, ...parameters);
+          },
+        })
+      : log;
+
+    this.log.debug("Finished initializing platform:", config.name);
 
     const timeout = (config.requestTimeout ?? 20) * 1000;
     this.el = new EchonetLite({ type: "lan", timeout: timeout });
