@@ -379,7 +379,7 @@ class EchonetLiteHeaterCoolerAccessory {
         return await setPropertyValueFunc(address, eoj, prop, maxRetry);
     }
     propToString(prop) {
-        const maps = prop.map((p) => {
+        const maps = prop.sort().map((p) => {
             const epc = `0x${Number(p.epc).toString(16).toUpperCase()}`;
             return { ...p, epc: epc };
         });
