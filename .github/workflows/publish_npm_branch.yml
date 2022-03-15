@@ -1,9 +1,8 @@
 name: Publish to npm branch
 
 on:
-  push:
-    branches:
-      - 'main'
+  release:
+    types: [published]
 
 jobs:
   build:
@@ -40,12 +39,16 @@ jobs:
           cp -a package.json README.md publish
           cp -a config.schema.json dist publish
 
+      - name: Prepare env.TAG
+        run: |
+          echo "TAG=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+
       - name: Publish
         uses: peaceiris/actions-gh-pages@v3.8.0
-        if: ${{ github.event_name == 'push' }}
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./publish
           publish_branch: npm
           user_name: 'github-actions[bot]'
           user_email: 'github-actions[bot]@users.noreply.github.com'
+          full_commit_message: Release ${{ env.TAG }}
