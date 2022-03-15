@@ -604,7 +604,7 @@ export class EchonetLiteHeaterCoolerAccessory {
   }
 
   private propToString(prop: ELProp[]): string {
-    const maps = prop.map((p) => {
+    const maps = prop.sort().map((p) => {
       const epc = `0x${Number(p.epc).toString(16).toUpperCase()}`;
       return { ...p, epc: epc };
     });
