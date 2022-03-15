@@ -2,12 +2,12 @@ import {
   API,
   APIEvent,
   DynamicPlatformPlugin,
-  Logger,
   PlatformAccessory,
   PlatformConfig,
   Service,
   Characteristic,
 } from "homebridge";
+import { Logger } from "homebridge/lib/logger";
 import EchonetLite from "node-echonet-lite";
 import { promisify } from "util";
 
@@ -35,7 +35,7 @@ export class EchonetLiteHeaterCoolerPlatform implements DynamicPlatformPlugin {
     public readonly api: API,
   ) {
     if (!this.verifyConfig(config)) {
-      this.log.error("Invalid configuration. Please check your configuration.");
+      log.error("Invalid configuration. Please check your configuration.");
 
       // Dummy data to pass Strict Property Initialization
       this.config = {
@@ -48,13 +48,10 @@ export class EchonetLiteHeaterCoolerPlatform implements DynamicPlatformPlugin {
     }
 
     this.config = config;
-    this.log = this.config.debug
-      ? Object.assign(Object.create(log), {
-          debug: (message: string, ...parameters: unknown[]) => {
-            this.log.info(`[DEBUG]: ${message}`, ...parameters);
-          },
-        })
-      : log;
+
+    Logger.forceColor();
+    Logger.setDebugEnabled(this.config.debug);
+    this.log = new Logger(log.prefix);
 
     this.log.debug("Finished initializing platform:", config.name);
 
