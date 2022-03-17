@@ -227,6 +227,8 @@ export class EchonetLiteHeaterCoolerPlatform implements DynamicPlatformPlugin {
       this.log.info(
         `Restoring existing accessory from cache: ${existingAccessory.displayName}(${opts.address})`,
       );
+      // Update device address
+      existingAccessory.context.address = opts.address;
       new EchonetLiteHeaterCoolerAccessory(this, existingAccessory);
     } else {
       this.log.info(`Adding new accessory: ${opts.name}(${opts.address})`);
