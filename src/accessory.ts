@@ -21,7 +21,7 @@ export class EchonetLiteHeaterCoolerAccessory {
   private currentState = 0;
   private targetState = 0;
   private currentTemp = -127;
-  private targetTemp: { [key: number]: number } = {};
+  private targetTemp: { 1: number; 2: number } = { 1: -1, 2: -1 };
 
   private updateInProgress = false;
   private doStateUpdate: Subject<void> = new Subject();
@@ -177,11 +177,15 @@ export class EchonetLiteHeaterCoolerAccessory {
         // target temperature
         case 0xb3: {
           const temperature = p.edt["temperature"] as number;
+
+          // constructor
           const { COOL, HEAT } =
             this.platform.Characteristic.TargetHeaterCoolerState;
+          if (this.targetTemp[COOL] === -1 || this.targetTemp[HEAT] === -1) {
+            this.targetTemp[COOL] = temperature;
+            this.targetTemp[HEAT] = temperature;
+          }
 
-          this.targetTemp[COOL] ??= temperature ?? 20;
-          this.targetTemp[HEAT] ??= temperature ?? 20;
           if (
             temperature != null &&
             this.targetTemp[this.targetState] != null
@@ -311,11 +315,9 @@ export class EchonetLiteHeaterCoolerAccessory {
    * Handle requests to get the current value of the "Cooling Threshold Temperature" characteristic
    */
   handleCoolingThresholdTemperatureGet() {
-    return (
-      this.targetTemp[
-        this.platform.Characteristic.TargetHeaterCoolerState.COOL
-      ] ?? 27
-    );
+    return this.targetTemp[
+      this.platform.Characteristic.TargetHeaterCoolerState.COOL
+    ];
   }
 
   /**
@@ -338,11 +340,9 @@ export class EchonetLiteHeaterCoolerAccessory {
    * Handle requests to get the current value of the "Heating Threshold Temperature" characteristic
    */
   handleHeatingThresholdTemperatureGet() {
-    return (
-      this.targetTemp[
-        this.platform.Characteristic.TargetHeaterCoolerState.HEAT
-      ] ?? 23
-    );
+    return this.targetTemp[
+      this.platform.Characteristic.TargetHeaterCoolerState.HEAT
+    ];
   }
 
   /**
@@ -418,11 +418,6 @@ export class EchonetLiteHeaterCoolerAccessory {
           );
 
           const temperature = p.edt["temperature"] as number;
-          const { COOL, HEAT } =
-            this.platform.Characteristic.TargetHeaterCoolerState;
-
-          this.targetTemp[COOL] ??= temperature ?? 20;
-          this.targetTemp[HEAT] ??= temperature ?? 20;
           if (
             temperature != null &&
             this.targetTemp[this.targetState] != null
@@ -523,24 +518,42 @@ export class EchonetLiteHeaterCoolerAccessory {
     ];
 
     if (this.active) {
-      const mode =
-        {
-          [this.platform.Characteristic.TargetHeaterCoolerState.COOL]: 2,
-          [this.platform.Characteristic.TargetHeaterCoolerState.HEAT]: 3,
-        }[this.targetState] ?? 1;
-      prop.push({
-        epc: 0xb0,
-        edt: { mode },
-      });
+      let mode: number;
+      let temperature: number;
 
-      // Set temperature when targetState is HEAT or COOL
-      const temperature = this.targetTemp[this.targetState];
-      if (temperature != null) {
-        prop.push({
+      switch (this.targetState) {
+        case this.platform.Characteristic.TargetHeaterCoolerState.COOL:
+          mode = 2;
+          temperature = this.targetTemp[this.targetState];
+          break;
+        case this.platform.Characteristic.TargetHeaterCoolerState.HEAT:
+          mode = 3;
+          temperature = this.targetTemp[this.targetState];
+          break;
+        default:
+          mode = 1;
+          const heat =
+            this.targetTemp[
+              this.platform.Characteristic.TargetHeaterCoolerState.HEAT
+            ];
+          const cool =
+            this.targetTemp[
+              this.platform.Characteristic.TargetHeaterCoolerState.COOL
+            ];
+          temperature = heat + Math.floor((cool - heat) / 2);
+          break;
+      }
+
+      prop.push(
+        {
+          epc: 0xb0,
+          edt: { mode },
+        },
+        {
           epc: 0xb3,
           edt: { temperature },
-        });
-      }
+        },
+      );
     }
 
     await this.send(this.address, this.eoj, "SetC", prop);
