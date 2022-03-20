@@ -426,20 +426,22 @@ export class EchonetLiteHeaterCoolerAccessory {
           }
 
           switch (this.targetState) {
-            case this.platform.Characteristic.TargetHeaterCoolerState.COOL:
+            case this.platform.Characteristic.TargetHeaterCoolerState.COOL: {
               this.targetTemp[this.targetState] = p.edt.temperature as number;
               this.service.updateCharacteristic(
                 this.platform.Characteristic.CoolingThresholdTemperature,
                 p.edt.temperature,
               );
               break;
-            case this.platform.Characteristic.TargetHeaterCoolerState.HEAT:
+            }
+            case this.platform.Characteristic.TargetHeaterCoolerState.HEAT: {
               this.targetTemp[this.targetState] = p.edt.temperature as number;
               this.service.updateCharacteristic(
                 this.platform.Characteristic.HeatingThresholdTemperature,
                 p.edt.temperature,
               );
               break;
+            }
           }
           return;
         }
@@ -476,25 +478,30 @@ export class EchonetLiteHeaterCoolerAccessory {
 
   private setHBModeByEchonetMode(mode: number) {
     switch (mode) {
-      case 2: // Cool
+      case 2: {
+        // Cool
         this.targetState =
           this.platform.Characteristic.TargetHeaterCoolerState.COOL;
         this.currentState =
           this.platform.Characteristic.CurrentHeaterCoolerState.COOLING;
         break;
-      case 3: // Heat
+      }
+      case 3: {
+        // Heat
         this.targetState =
           this.platform.Characteristic.TargetHeaterCoolerState.HEAT;
         this.currentState =
           this.platform.Characteristic.CurrentHeaterCoolerState.HEATING;
         break;
-      default:
+      }
+      default: {
         // Auto
         this.targetState =
           this.platform.Characteristic.TargetHeaterCoolerState.AUTO;
         this.currentState =
           this.platform.Characteristic.CurrentHeaterCoolerState.IDLE;
         break;
+      }
     }
 
     this.service.updateCharacteristic(
@@ -522,15 +529,17 @@ export class EchonetLiteHeaterCoolerAccessory {
       let temperature: number;
 
       switch (this.targetState) {
-        case this.platform.Characteristic.TargetHeaterCoolerState.COOL:
+        case this.platform.Characteristic.TargetHeaterCoolerState.COOL: {
           mode = 2;
           temperature = this.targetTemp[this.targetState];
           break;
-        case this.platform.Characteristic.TargetHeaterCoolerState.HEAT:
+        }
+        case this.platform.Characteristic.TargetHeaterCoolerState.HEAT: {
           mode = 3;
           temperature = this.targetTemp[this.targetState];
           break;
-        default:
+        }
+        default: {
           mode = 1;
           const heat =
             this.targetTemp[
@@ -542,6 +551,7 @@ export class EchonetLiteHeaterCoolerAccessory {
             ];
           temperature = heat + Math.floor((cool - heat) / 2);
           break;
+        }
       }
 
       prop.push(
