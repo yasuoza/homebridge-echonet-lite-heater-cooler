@@ -179,11 +179,11 @@ export class EchonetLiteHeaterCoolerAccessory {
           const temperature = p.edt["temperature"] as number;
 
           // constructor
-          const { COOL, HEAT } =
+          const { HEAT, COOL } =
             this.platform.Characteristic.TargetHeaterCoolerState;
-          if (this.targetTemp[COOL] === -1 || this.targetTemp[HEAT] === -1) {
-            this.targetTemp[COOL] = temperature;
+          if (this.targetTemp[HEAT] === -1 || this.targetTemp[COOL] === -1) {
             this.targetTemp[HEAT] = temperature;
+            this.targetTemp[COOL] = temperature;
           }
 
           if (
@@ -275,6 +275,31 @@ export class EchonetLiteHeaterCoolerAccessory {
   }
 
   /**
+   * Handle requests to get the current value of the "Cooling Threshold Temperature" characteristic
+   */
+  handleCoolingThresholdTemperatureGet() {
+    return this.targetTemp[
+      this.platform.Characteristic.TargetHeaterCoolerState.COOL
+    ];
+  }
+
+  /**
+   * Handle requests to set the "Cooling Threshold Temperature" characteristic
+   */
+  async handleCoolingThresholdTemperatureSet(value: CharacteristicValue) {
+    const temperature = value as number;
+
+    this.platform.log.info(
+      `${this.accessory.displayName} - SET CoolingThresholdTemperature: ${temperature}`,
+    );
+
+    this.targetTemp[this.platform.Characteristic.TargetHeaterCoolerState.COOL] =
+      temperature;
+
+    this.doStateUpdate.next();
+  }
+
+  /**
    * Handle requests to get the current value of the "Target Heater-Cooler State" characteristic
    */
   handleTargetHeaterCoolerStateGet() {
@@ -309,31 +334,6 @@ export class EchonetLiteHeaterCoolerAccessory {
    */
   handleCurrentTemperatureGet() {
     return this.currentTemp;
-  }
-
-  /**
-   * Handle requests to get the current value of the "Cooling Threshold Temperature" characteristic
-   */
-  handleCoolingThresholdTemperatureGet() {
-    return this.targetTemp[
-      this.platform.Characteristic.TargetHeaterCoolerState.COOL
-    ];
-  }
-
-  /**
-   * Handle requests to set the "Cooling Threshold Temperature" characteristic
-   */
-  async handleCoolingThresholdTemperatureSet(value: CharacteristicValue) {
-    const temperature = value as number;
-
-    this.platform.log.info(
-      `${this.accessory.displayName} - SET CoolingThresholdTemperature: ${temperature}`,
-    );
-
-    this.targetTemp[this.platform.Characteristic.TargetHeaterCoolerState.COOL] =
-      temperature;
-
-    this.doStateUpdate.next();
   }
 
   /**
@@ -408,8 +408,10 @@ export class EchonetLiteHeaterCoolerAccessory {
 
         // target temperature
         case 0xb3: {
+          const temperature = p.edt["temperature"] as number | undefined;
+
           // Auto mode triggers null temperature
-          if (p.edt.temperature == null) {
+          if (temperature == null) {
             return;
           }
 
@@ -417,32 +419,32 @@ export class EchonetLiteHeaterCoolerAccessory {
             `${this.accessory.displayName} - Received TargetTemperature: ${p.edt.temperature}`,
           );
 
-          const temperature = p.edt["temperature"] as number;
-          if (
-            temperature != null &&
-            this.targetTemp[this.targetState] != null
-          ) {
-            this.targetTemp[this.targetState] = temperature;
+          const { AUTO, HEAT, COOL } =
+            this.platform.Characteristic.TargetHeaterCoolerState;
+          switch (this.targetState) {
+            case AUTO: {
+              this.targetTemp[HEAT] = temperature - 1;
+              this.targetTemp[COOL] = temperature + 1;
+              break;
+            }
+            case HEAT:
+            case COOL: {
+              this.targetTemp[this.targetState] = temperature;
+              break;
+            }
+            default: {
+              return;
+            }
           }
 
-          switch (this.targetState) {
-            case this.platform.Characteristic.TargetHeaterCoolerState.COOL: {
-              this.targetTemp[this.targetState] = p.edt.temperature as number;
-              this.service.updateCharacteristic(
-                this.platform.Characteristic.CoolingThresholdTemperature,
-                p.edt.temperature,
-              );
-              break;
-            }
-            case this.platform.Characteristic.TargetHeaterCoolerState.HEAT: {
-              this.targetTemp[this.targetState] = p.edt.temperature as number;
-              this.service.updateCharacteristic(
-                this.platform.Characteristic.HeatingThresholdTemperature,
-                p.edt.temperature,
-              );
-              break;
-            }
-          }
+          this.service.updateCharacteristic(
+            this.platform.Characteristic.CoolingThresholdTemperature,
+            this.targetTemp[COOL],
+          );
+          this.service.updateCharacteristic(
+            this.platform.Characteristic.HeatingThresholdTemperature,
+            this.targetTemp[HEAT],
+          );
           return;
         }
 
