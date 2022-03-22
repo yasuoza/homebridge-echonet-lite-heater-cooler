@@ -423,6 +423,12 @@ export class EchonetLiteHeaterCoolerAccessory {
             this.platform.Characteristic.TargetHeaterCoolerState;
           switch (this.targetState) {
             case AUTO: {
+              if (
+                this.targetTemp[HEAT] <= temperature &&
+                temperature <= this.targetTemp[COOL]
+              ) {
+                return;
+              }
               this.targetTemp[HEAT] = temperature - 1;
               this.targetTemp[COOL] = temperature + 1;
               break;
