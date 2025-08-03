@@ -17,7 +17,7 @@ class EchonetLiteHeaterCoolerAccessory {
         this.currentState = 0;
         this.targetState = 0;
         this.currentTemp = -127;
-        this.targetTemp = {};
+        this.targetTemp = { 1: -1, 2: -1 };
         this.updateInProgress = false;
         this.doStateUpdate = new rxjs_1.Subject();
         this.address = accessory.context.address;
@@ -99,8 +99,7 @@ class EchonetLiteHeaterCoolerAccessory {
             { epc: 0xbb, edt: null }, // current temperature
         ]);
         res.message.prop.forEach((p) => {
-            var _a, _b, _c;
-            var _d, _e;
+            var _a;
             if (p.edt === null) {
                 return;
             }
@@ -120,9 +119,12 @@ class EchonetLiteHeaterCoolerAccessory {
                 // target temperature
                 case 0xb3: {
                     const temperature = p.edt["temperature"];
-                    const { COOL, HEAT } = this.platform.Characteristic.TargetHeaterCoolerState;
-                    (_a = (_d = this.targetTemp)[COOL]) !== null && _a !== void 0 ? _a : (_d[COOL] = temperature !== null && temperature !== void 0 ? temperature : 20);
-                    (_b = (_e = this.targetTemp)[HEAT]) !== null && _b !== void 0 ? _b : (_e[HEAT] = temperature !== null && temperature !== void 0 ? temperature : 20);
+                    // constructor
+                    const { HEAT, COOL } = this.platform.Characteristic.TargetHeaterCoolerState;
+                    if (this.targetTemp[HEAT] === -1 || this.targetTemp[COOL] === -1) {
+                        this.targetTemp[HEAT] = temperature;
+                        this.targetTemp[COOL] = temperature;
+                    }
                     if (temperature != null &&
                         this.targetTemp[this.targetState] != null) {
                         this.targetTemp[this.targetState] = temperature;
@@ -131,7 +133,7 @@ class EchonetLiteHeaterCoolerAccessory {
                 }
                 // current temperature
                 case 0xbb: {
-                    this.currentTemp = (_c = p.edt["temperature"]) !== null && _c !== void 0 ? _c : -127;
+                    this.currentTemp = (_a = p.edt["temperature"]) !== null && _a !== void 0 ? _a : -127;
                     return;
                 }
                 default:
@@ -163,6 +165,10 @@ class EchonetLiteHeaterCoolerAccessory {
      * Handle requests to set the "Active" characteristic
      */
     async handleActiveSet(value) {
+        // Idempotency support
+        if (value === this.active) {
+            return;
+        }
         this.platform.log.info(`${this.accessory.displayName} - SET Active: ${value}`);
         this.active = value;
         this.doStateUpdate.next();
@@ -172,6 +178,22 @@ class EchonetLiteHeaterCoolerAccessory {
      */
     handleCurrentHeaterCoolerStateGet() {
         return this.currentState;
+    }
+    /**
+     * Handle requests to get the current value of the "Cooling Threshold Temperature" characteristic
+     */
+    handleCoolingThresholdTemperatureGet() {
+        return this.targetTemp[this.platform.Characteristic.TargetHeaterCoolerState.COOL];
+    }
+    /**
+     * Handle requests to set the "Cooling Threshold Temperature" characteristic
+     */
+    async handleCoolingThresholdTemperatureSet(value) {
+        const temperature = value;
+        this.platform.log.info(`${this.accessory.displayName} - SET CoolingThresholdTemperature: ${temperature}`);
+        this.targetTemp[this.platform.Characteristic.TargetHeaterCoolerState.COOL] =
+            temperature;
+        this.doStateUpdate.next();
     }
     /**
      * Handle requests to get the current value of the "Target Heater-Cooler State" characteristic
@@ -197,28 +219,10 @@ class EchonetLiteHeaterCoolerAccessory {
         return this.currentTemp;
     }
     /**
-     * Handle requests to get the current value of the "Cooling Threshold Temperature" characteristic
-     */
-    handleCoolingThresholdTemperatureGet() {
-        var _a;
-        return ((_a = this.targetTemp[this.platform.Characteristic.TargetHeaterCoolerState.COOL]) !== null && _a !== void 0 ? _a : 27);
-    }
-    /**
-     * Handle requests to set the "Cooling Threshold Temperature" characteristic
-     */
-    async handleCoolingThresholdTemperatureSet(value) {
-        const temperature = value;
-        this.platform.log.info(`${this.accessory.displayName} - SET CoolingThresholdTemperature: ${temperature}`);
-        this.targetTemp[this.platform.Characteristic.TargetHeaterCoolerState.COOL] =
-            temperature;
-        this.doStateUpdate.next();
-    }
-    /**
      * Handle requests to get the current value of the "Heating Threshold Temperature" characteristic
      */
     handleHeatingThresholdTemperatureGet() {
-        var _a;
-        return ((_a = this.targetTemp[this.platform.Characteristic.TargetHeaterCoolerState.HEAT]) !== null && _a !== void 0 ? _a : 23);
+        return this.targetTemp[this.platform.Characteristic.TargetHeaterCoolerState.HEAT];
     }
     /**
      * Handle requests to set the "Heating Threshold Temperature" characteristic
@@ -238,8 +242,7 @@ class EchonetLiteHeaterCoolerAccessory {
             return;
         }
         event.message.prop.forEach((p) => {
-            var _a, _b, _c;
-            var _d, _e;
+            var _a;
             if (!p.edt) {
                 return;
             }
@@ -261,34 +264,39 @@ class EchonetLiteHeaterCoolerAccessory {
                 }
                 // target temperature
                 case 0xb3: {
+                    const temperature = p.edt["temperature"];
                     // Auto mode triggers null temperature
-                    if (p.edt.temperature == null) {
+                    if (temperature == null) {
                         return;
                     }
                     this.platform.log.info(`${this.accessory.displayName} - Received TargetTemperature: ${p.edt.temperature}`);
-                    const temperature = p.edt["temperature"];
-                    const { COOL, HEAT } = this.platform.Characteristic.TargetHeaterCoolerState;
-                    (_a = (_d = this.targetTemp)[COOL]) !== null && _a !== void 0 ? _a : (_d[COOL] = temperature !== null && temperature !== void 0 ? temperature : 20);
-                    (_b = (_e = this.targetTemp)[HEAT]) !== null && _b !== void 0 ? _b : (_e[HEAT] = temperature !== null && temperature !== void 0 ? temperature : 20);
-                    if (temperature != null &&
-                        this.targetTemp[this.targetState] != null) {
-                        this.targetTemp[this.targetState] = temperature;
-                    }
+                    const { AUTO, HEAT, COOL } = this.platform.Characteristic.TargetHeaterCoolerState;
                     switch (this.targetState) {
-                        case this.platform.Characteristic.TargetHeaterCoolerState.COOL:
-                            this.targetTemp[this.targetState] = p.edt.temperature;
-                            this.service.updateCharacteristic(this.platform.Characteristic.CoolingThresholdTemperature, p.edt.temperature);
+                        case AUTO: {
+                            if (this.targetTemp[HEAT] <= temperature &&
+                                temperature <= this.targetTemp[COOL]) {
+                                return;
+                            }
+                            this.targetTemp[HEAT] = temperature - 1;
+                            this.targetTemp[COOL] = temperature + 1;
                             break;
-                        case this.platform.Characteristic.TargetHeaterCoolerState.HEAT:
-                            this.targetTemp[this.targetState] = p.edt.temperature;
-                            this.service.updateCharacteristic(this.platform.Characteristic.HeatingThresholdTemperature, p.edt.temperature);
+                        }
+                        case HEAT:
+                        case COOL: {
+                            this.targetTemp[this.targetState] = temperature;
                             break;
+                        }
+                        default: {
+                            return;
+                        }
                     }
+                    this.service.updateCharacteristic(this.platform.Characteristic.CoolingThresholdTemperature, this.targetTemp[COOL]);
+                    this.service.updateCharacteristic(this.platform.Characteristic.HeatingThresholdTemperature, this.targetTemp[HEAT]);
                     return;
                 }
                 // current temperature
                 case 0xbb: {
-                    this.currentTemp = (_c = p.edt["temperature"]) !== null && _c !== void 0 ? _c : -127;
+                    this.currentTemp = (_a = p.edt["temperature"]) !== null && _a !== void 0 ? _a : -127;
                     return;
                 }
             }
@@ -300,31 +308,35 @@ class EchonetLiteHeaterCoolerAccessory {
     }
     setHBModeByEchonetMode(mode) {
         switch (mode) {
-            case 2: // Cool
+            case 2: {
+                // Cool
                 this.targetState =
                     this.platform.Characteristic.TargetHeaterCoolerState.COOL;
                 this.currentState =
                     this.platform.Characteristic.CurrentHeaterCoolerState.COOLING;
                 break;
-            case 3: // Heat
+            }
+            case 3: {
+                // Heat
                 this.targetState =
                     this.platform.Characteristic.TargetHeaterCoolerState.HEAT;
                 this.currentState =
                     this.platform.Characteristic.CurrentHeaterCoolerState.HEATING;
                 break;
-            default:
+            }
+            default: {
                 // Auto
                 this.targetState =
                     this.platform.Characteristic.TargetHeaterCoolerState.AUTO;
                 this.currentState =
                     this.platform.Characteristic.CurrentHeaterCoolerState.IDLE;
                 break;
+            }
         }
         this.service.updateCharacteristic(this.platform.Characteristic.TargetHeaterCoolerState, this.handleTargetHeaterCoolerStateGet());
         this.service.updateCharacteristic(this.platform.Characteristic.CurrentHeaterCoolerState, this.handleCurrentHeaterCoolerStateGet());
     }
     async applyStatusUpdate() {
-        var _a;
         const status = this.active === this.platform.Characteristic.Active.ACTIVE;
         const prop = [
             {
@@ -333,22 +345,34 @@ class EchonetLiteHeaterCoolerAccessory {
             },
         ];
         if (this.active) {
-            const mode = (_a = {
-                [this.platform.Characteristic.TargetHeaterCoolerState.COOL]: 2,
-                [this.platform.Characteristic.TargetHeaterCoolerState.HEAT]: 3,
-            }[this.targetState]) !== null && _a !== void 0 ? _a : 1;
+            let mode;
+            let temperature;
+            switch (this.targetState) {
+                case this.platform.Characteristic.TargetHeaterCoolerState.COOL: {
+                    mode = 2;
+                    temperature = this.targetTemp[this.targetState];
+                    break;
+                }
+                case this.platform.Characteristic.TargetHeaterCoolerState.HEAT: {
+                    mode = 3;
+                    temperature = this.targetTemp[this.targetState];
+                    break;
+                }
+                default: {
+                    mode = 1;
+                    const heat = this.targetTemp[this.platform.Characteristic.TargetHeaterCoolerState.HEAT];
+                    const cool = this.targetTemp[this.platform.Characteristic.TargetHeaterCoolerState.COOL];
+                    temperature = heat + Math.floor((cool - heat) / 2);
+                    break;
+                }
+            }
             prop.push({
                 epc: 0xb0,
                 edt: { mode },
+            }, {
+                epc: 0xb3,
+                edt: { temperature },
             });
-            // Set temperature when targetState is HEAT or COOL
-            const temperature = this.targetTemp[this.targetState];
-            if (temperature != null) {
-                prop.push({
-                    epc: 0xb3,
-                    edt: { temperature },
-                });
-            }
         }
         await this.send(this.address, this.eoj, "SetC", prop);
     }

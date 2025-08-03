@@ -1,8 +1,9 @@
 /// <reference types="node" />
-declare type ELEDT = {
+/// <reference types="node" />
+type ELEDT = {
     [key: string]: boolean | number;
 } | null;
-export declare type ELProp = {
+export type ELProp = {
     epc: number;
     edt: ELEDT;
     buffer?: Buffer;

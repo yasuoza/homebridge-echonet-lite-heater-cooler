@@ -34,6 +34,14 @@ export declare class EchonetLiteHeaterCoolerAccessory {
      */
     handleCurrentHeaterCoolerStateGet(): number;
     /**
+     * Handle requests to get the current value of the "Cooling Threshold Temperature" characteristic
+     */
+    handleCoolingThresholdTemperatureGet(): number;
+    /**
+     * Handle requests to set the "Cooling Threshold Temperature" characteristic
+     */
+    handleCoolingThresholdTemperatureSet(value: CharacteristicValue): Promise<void>;
+    /**
      * Handle requests to get the current value of the "Target Heater-Cooler State" characteristic
      */
     handleTargetHeaterCoolerStateGet(): number;
@@ -45,14 +53,6 @@ export declare class EchonetLiteHeaterCoolerAccessory {
      * Handle requests to get the current value of the "Current Temperature" characteristic
      */
     handleCurrentTemperatureGet(): number;
-    /**
-     * Handle requests to get the current value of the "Cooling Threshold Temperature" characteristic
-     */
-    handleCoolingThresholdTemperatureGet(): number;
-    /**
-     * Handle requests to set the "Cooling Threshold Temperature" characteristic
-     */
-    handleCoolingThresholdTemperatureSet(value: CharacteristicValue): Promise<void>;
     /**
      * Handle requests to get the current value of the "Heating Threshold Temperature" characteristic
      */
