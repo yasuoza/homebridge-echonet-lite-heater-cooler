@@ -258,6 +258,11 @@ export class EchonetLiteHeaterCoolerAccessory {
    * Handle requests to set the "Active" characteristic
    */
   async handleActiveSet(value: CharacteristicValue) {
+    // Idempotency support
+    if (value === this.active) {
+      return;
+    }
+
     this.platform.log.info(
       `${this.accessory.displayName} - SET Active: ${value}`,
     );
